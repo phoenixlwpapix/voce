@@ -95,6 +95,8 @@ Start the compiled application with `pnpm start`.
 2. Add the production `NEXT_PUBLIC_CONVEX_URL` to the Next.js hosting provider.
 3. Build with `pnpm build` and deploy the Next.js output. Vercel works without additional adapters.
 
+The live production backend for this project is `grateful-caterpillar-393` at `https://grateful-caterpillar-393.convex.cloud`. The Vercel project is connected to the private `phoenixlwpapix/voce` GitHub repository and deploys from `main`.
+
 The Gemini and JWT private keys must never be configured as public Next.js environment variables. Authentication is paired with server-side single-owner authorization: hiding the UI alone is not treated as protection.
 
 ## Review shortcuts
