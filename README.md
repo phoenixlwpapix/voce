@@ -2,6 +2,8 @@
 
 Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, and Spanish words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, and a deterministic two-button scheduler powers review.
 
+Production: https://voce-fawn.vercel.app
+
 ## Stack
 
 - Next.js 16, React 19, TypeScript strict mode, App Router
