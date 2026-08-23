@@ -55,7 +55,7 @@ Convex Auth also needs `JWT_PRIVATE_KEY`, `JWKS`, and `SITE_URL` on every deploy
 | `APP_OWNER_EMAIL` | Convex functions | Only email allowed to claim and use the personal notebook |
 | `JWT_PRIVATE_KEY` | Convex Auth | Server-only session signing private key |
 | `JWKS` | Convex Auth | Public key set used to verify sessions |
-| `SITE_URL` | Convex Auth | Convex HTTP action origin, such as `https://your-deployment.convex.site` |
+| `SITE_URL` | Convex Auth | Public frontend origin, such as `https://voce-fawn.vercel.app` |
 
 `.env.example` documents both values. For local Convex development, configure the Gemini secret with the dashboard or `pnpm convex env set GEMINI_API_KEY your-key`.
 
