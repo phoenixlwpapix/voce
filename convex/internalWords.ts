@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import { languageValidator, lookupResultValidator } from "./validators";
 import { v } from "convex/values";
+import { normalizePhonetic } from "../lib/phonetics";
 
 export const upsertLookupResult = internalMutation({
   args: {
@@ -17,6 +18,7 @@ export const upsertLookupResult = internalMutation({
     word: v.string(),
   }),
   handler: async (ctx, args) => {
+    const phonetic = normalizePhonetic(args.result.phonetic);
     const existing = await ctx.db
       .query("words")
       .withIndex("by_ownerId_language_normalizedWord", (query) =>
@@ -33,7 +35,7 @@ export const upsertLookupResult = internalMutation({
       await ctx.db.patch(existing._id, {
         inputWord: args.inputWord,
         word: args.result.word,
-        phonetic: args.result.phonetic,
+        phonetic,
         definitions: args.result.definitions,
         grammar: args.result.grammar,
         examples: args.result.examples,
@@ -49,7 +51,7 @@ export const upsertLookupResult = internalMutation({
       normalizedWord: args.normalizedWord,
       word: args.result.word,
       language: args.language,
-      phonetic: args.result.phonetic,
+      phonetic,
       definitions: args.result.definitions,
       grammar: args.result.grammar,
       examples: args.result.examples,

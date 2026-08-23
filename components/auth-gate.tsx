@@ -2,7 +2,8 @@
 
 import { useAuthActions, useConvexAuth } from "@convex-dev/auth/react";
 import { useMutation } from "convex/react";
-import { ArrowRight, BookOpen, KeyRound, LoaderCircle, LockKeyhole } from "lucide-react";
+import { ArrowRight, KeyRound, LoaderCircle, LockKeyhole } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -69,36 +70,51 @@ function SignInScreen() {
 
   return (
     <main className="grid min-h-dvh lg:grid-cols-[minmax(0,1.12fr)_minmax(28rem,0.88fr)]">
-      <section className="relative hidden overflow-hidden border-r border-border bg-secondary/35 p-12 lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute inset-x-0 top-[38%] h-px bg-border" aria-hidden="true" />
-        <div className="absolute bottom-[24%] left-0 h-px w-2/3 bg-border" aria-hidden="true" />
-        <div className="relative flex items-baseline gap-3">
-          <span className="font-serif text-3xl tracking-[-0.04em]">Voce</span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Personal lexicon
-          </span>
+      <section className="hidden border-r border-border bg-secondary/35 p-12 lg:flex lg:flex-col lg:justify-between">
+        <div className="flex items-center gap-4">
+          <Image
+            src="/icon.svg"
+            alt=""
+            width={44}
+            height={44}
+            priority
+            className="size-11 rounded-[0.7rem]"
+          />
+          <div>
+            <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
+            <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+              Personal lexicon
+            </p>
+          </div>
         </div>
-        <blockquote className="relative max-w-xl">
-          <BookOpen className="mb-8 size-5 text-muted-foreground" aria-hidden="true" />
-          <p className="font-serif text-[clamp(3rem,5vw,5.8rem)] leading-[0.92] tracking-[-0.055em]">
-            Words become yours when you return to them.
+
+        <div className="max-w-xl pb-[6vh]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+            A place for words to stay
           </p>
-          <p className="mt-8 max-w-md text-sm leading-7 text-muted-foreground">
-            一个安静、私密的多语言词汇簿。你的词条、复习进度与查询权限都只属于这个账号。
+          <h2 className="mt-7 max-w-[9ch] font-serif text-[clamp(3.5rem,5.5vw,6rem)] leading-[0.88] tracking-[-0.06em]">
+            Words worth returning to.
+          </h2>
+          <p className="mt-9 text-base leading-7 text-muted-foreground">
+            把遇见的词，慢慢变成自己的。
           </p>
-        </blockquote>
-        <p className="relative font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+        </div>
+
+        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
           English · Français · Español
         </p>
       </section>
 
       <section className="flex min-h-dvh items-center px-5 py-12 sm:px-10 lg:px-16">
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-12 flex items-baseline gap-3 lg:hidden">
-            <span className="font-serif text-3xl tracking-[-0.04em]">Voce</span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Personal lexicon
-            </span>
+          <div className="mb-12 flex items-center gap-3 lg:hidden">
+            <Image src="/icon.svg" alt="" width={36} height={36} priority className="size-9 rounded-[0.6rem]" />
+            <div>
+              <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                Personal lexicon
+              </p>
+            </div>
           </div>
 
           <KeyRound className="size-5 text-muted-foreground" aria-hidden="true" />
@@ -189,10 +205,6 @@ function SignInScreen() {
             </Button>
           </form>
 
-          <p className="mt-8 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
-            <LockKeyhole className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            密码只会以安全哈希保存；Gemini API Key 不会发送到浏览器。
-          </p>
         </div>
       </section>
     </main>
