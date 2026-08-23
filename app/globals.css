@@ -42,6 +42,7 @@
   --font-serif: var(--font-newsreader);
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-ibm-plex-mono);
+  --font-ipa: var(--font-noto-sans);
 }
 
 * {

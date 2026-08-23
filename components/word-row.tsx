@@ -51,10 +51,10 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
       <div className="grid grid-cols-[1fr_auto] gap-x-3 py-5 sm:grid-cols-[minmax(10rem,1.1fr)_5rem_minmax(8rem,0.9fr)_minmax(12rem,1.5fr)_auto] sm:items-center sm:gap-x-5 sm:py-6">
         <div className="min-w-0">
           <h3 className="truncate font-serif text-[1.65rem] leading-none tracking-[-0.025em]">{word.word}</h3>
-          <p className="mt-2 truncate font-mono text-[11px] text-muted-foreground sm:hidden">{formatPhonetic(word.phonetic)}</p>
+          <p className="mt-2 truncate font-ipa text-[11px] text-muted-foreground sm:hidden">{formatPhonetic(word.phonetic)}</p>
         </div>
         <LanguageBadge language={word.language} className="hidden justify-self-start sm:inline-flex" />
-        <p className="hidden truncate font-mono text-xs text-muted-foreground sm:block">{formatPhonetic(word.phonetic)}</p>
+        <p className="hidden truncate font-ipa text-xs text-muted-foreground sm:block">{formatPhonetic(word.phonetic)}</p>
         <p lang="zh-CN" className="col-span-2 mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground sm:col-span-1 sm:mt-0 sm:line-clamp-1">
           {word.definitions[0]?.meaningZh}
           {word.definitions.length > 1 ? <span className="ml-1 font-mono text-[10px]">+{word.definitions.length - 1}</span> : null}

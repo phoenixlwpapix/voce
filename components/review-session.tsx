@@ -136,7 +136,7 @@ function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
 function ReviewCardBack({ word }: { word: WordDocument }) {
   return (
     <div className="w-full text-left">
-      <p className="mb-7 text-center font-mono text-sm text-muted-foreground">{formatPhonetic(word.phonetic)}</p>
+      <p className="mb-7 text-center font-ipa text-sm text-muted-foreground">{formatPhonetic(word.phonetic)}</p>
       <div className="space-y-3">
         {word.definitions.map((definition, index) => (
           <div key={`${definition.partOfSpeech}-${index}`} className="grid grid-cols-[2rem_1fr] gap-2 text-sm leading-6 sm:text-base">
