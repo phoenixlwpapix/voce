@@ -41,7 +41,7 @@ On PowerShell, use `Copy-Item .env.example .env.local`.
 Connect the repository to a Convex deployment and start schema/function syncing:
 
 ```bash
-pnpm convex:dev
+pnpm dev:convex
 ```
 
 The command creates or updates `NEXT_PUBLIC_CONVEX_URL` in `.env.local` and regenerates `convex/_generated`. Keep it running beside the Next.js development server. In the Convex dashboard, add `GEMINI_API_KEY` under the deployment environment variables. The key belongs to the Convex action environment; do not prefix it with `NEXT_PUBLIC_` or place it in browser code.
@@ -63,16 +63,17 @@ Convex Auth also needs `JWT_PRIVATE_KEY`, `JWKS`, and `SITE_URL` on every deploy
 
 ## Local development
 
-Run Convex in one terminal:
-
-```bash
-pnpm convex:dev
-```
-
-Run Next.js in another:
+Start Next.js and Convex together:
 
 ```bash
 pnpm dev
+```
+
+To run either process separately, use:
+
+```bash
+pnpm dev:next
+pnpm dev:convex
 ```
 
 Open `http://localhost:3000`. The lookup month is generated in the browser's local timezone before the request is sent.
