@@ -16,7 +16,7 @@ import { formatPhonetic } from "@/lib/phonetics";
 import { cn } from "@/lib/utils";
 import type { Language, WordDocument } from "@/lib/types";
 
-const genderLabel = { masculine: "阳性", feminine: "阴性", neutral: "中性" } as const;
+const genderLabel = { masculine: "Masculine", feminine: "Feminine", neutral: "Neutral" } as const;
 
 type ReviewRange = "currentMonth" | "threeMonths" | "all";
 type ReviewConfig = { language: Language; range: ReviewRange };
@@ -26,15 +26,15 @@ const reviewRangeOptions: Array<{
   label: string;
   description: string;
 }> = [
-  { value: "currentMonth", label: "本月", description: "本月收录且已经到期的词" },
-  { value: "threeMonths", label: "近三个月", description: "最近三个自然月收录且已经到期的词" },
-  { value: "all", label: "全部", description: "所有时间内已经到期的词" },
+  { value: "currentMonth", label: "This month", description: "Due words added this month" },
+  { value: "threeMonths", label: "Last 3 months", description: "Due words added during the last three calendar months" },
+  { value: "all", label: "All time", description: "All due words in your collection" },
 ];
 
 const reviewRangeLabels: Record<ReviewRange, string> = {
-  currentMonth: "本月",
-  threeMonths: "近三个月",
-  all: "全部",
+  currentMonth: "This month",
+  threeMonths: "Last 3 months",
+  all: "All time",
 };
 
 const languageSelectionClasses: Record<Language, string> = {
@@ -63,7 +63,7 @@ function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
     <main className="flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
         <Button asChild variant="ghost" size="sm">
-          <Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回词汇簿</Link>
+          <Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link>
         </Button>
         <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Review setup</p>
       </header>
@@ -72,8 +72,8 @@ function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
         <div className="w-full">
           <div className="mb-10 text-center">
             <CalendarRange className="mx-auto size-5 text-muted-foreground" aria-hidden="true" />
-            <h1 id="review-setup-title" className="mt-5 font-serif text-4xl tracking-[-0.045em] sm:text-5xl">选择今天的复习范围</h1>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">只会载入所选语种和收录时间内已经到期的词。</p>
+            <h1 id="review-setup-title" className="mt-5 font-serif text-4xl tracking-[-0.045em] sm:text-5xl">Choose today&apos;s review set</h1>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">Only due words matching both choices will be included.</p>
           </div>
 
           <fieldset>
@@ -125,7 +125,7 @@ function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
           </fieldset>
 
           <Button type="button" className="mt-8 w-full" onClick={() => onStart({ language, range })}>
-            开始复习 · {language} · {reviewRangeLabels[range]}
+            Start review · {language} · {reviewRangeLabels[range]}
           </Button>
         </div>
       </section>
@@ -141,22 +141,22 @@ function ReviewCardBack({ word }: { word: WordDocument }) {
         {word.definitions.map((definition, index) => (
           <div key={`${definition.partOfSpeech}-${index}`} className="grid grid-cols-[2rem_1fr] gap-2 text-sm leading-6 sm:text-base">
             <span className="font-mono text-[10px] text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
-            <p><i className="mr-2 text-muted-foreground">{definition.partOfSpeech}</i>{definition.meaningZh}</p>
+            <p><i className="mr-2 text-muted-foreground">{definition.partOfSpeech}</i><span lang="zh-CN">{definition.meaningZh}</span></p>
           </div>
         ))}
       </div>
       {word.grammar ? (
         <div className="my-7 flex flex-wrap gap-x-5 gap-y-2 border-y border-border py-4 text-xs text-muted-foreground">
           {word.grammar.gender ? <span>{genderLabel[word.grammar.gender]}</span> : null}
-          {word.grammar.infinitive ? <span>原形 · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
-          {word.grammar.noteZh ? <span className="basis-full">{word.grammar.noteZh}</span> : null}
+          {word.grammar.infinitive ? <span>Infinitive · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
+          {word.grammar.noteZh ? <span lang="zh-CN" className="basis-full">{word.grammar.noteZh}</span> : null}
         </div>
       ) : <div className="my-7 border-t border-border" />}
       <div className="space-y-5">
         {word.examples.map((example, index) => (
           <blockquote key={`${example.target}-${index}`} className="border-l border-border pl-4">
             <p className="font-serif text-lg leading-6">{example.target}</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">{example.translationZh}</p>
+            <p lang="zh-CN" className="mt-1 text-xs leading-5 text-muted-foreground">{example.translationZh}</p>
           </blockquote>
         ))}
       </div>
@@ -254,7 +254,7 @@ export function ReviewSession() {
   }
 
   if (queue === undefined) {
-    return <main className="grid min-h-dvh place-items-center"><div className="text-center"><LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" /><p className="mt-4 text-sm text-muted-foreground">正在整理今日卡片…</p></div></main>;
+    return <main className="grid min-h-dvh place-items-center"><div className="text-center"><LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" /><p className="mt-4 text-sm text-muted-foreground">Preparing today&apos;s cards…</p></div></main>;
   }
 
   if (!current) {
@@ -264,11 +264,11 @@ export function ReviewSession() {
         <div className="max-w-md">
           <span className="mx-auto grid size-12 place-items-center rounded-full border border-border"><Check className="size-5" aria-hidden="true" /></span>
           <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Review complete</p>
-          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">今天到这里。</h1>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `你完成了 ${reviewedCount} 个词的复习。` : "当前语种和时间范围内没有到期的词。"}</p>
+          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">That&apos;s all for today.</h1>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `You reviewed ${reviewedCount} ${reviewedCount === 1 ? "word" : "words"}.` : "No due words match this language and time range."}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button type="button" variant="outline" onClick={resetSelection}>重新选择</Button>
-            <Button asChild><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回词汇簿</Link></Button>
+            <Button type="button" variant="outline" onClick={resetSelection}>Choose again</Button>
+            <Button asChild><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link></Button>
           </div>
         </div>
       </main>
@@ -286,9 +286,9 @@ export function ReviewSession() {
   return (
     <main className="flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
-        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />退出</Link></Button>
+        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Exit</Link></Button>
         <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{reviewConfig.language} · {reviewRangeLabels[reviewConfig.range]} · {String(position).padStart(2, "0")} / {String(total).padStart(2, "0")}</p>
-        <Button type="button" variant="ghost" size="icon" onClick={playCurrent} disabled={!speechAvailable} aria-label={`朗读 ${current.word}`} title={speechAvailable ? "空格键播放发音" : "此浏览器不支持语音朗读"}><Volume2 className="size-4" /></Button>
+        <Button type="button" variant="ghost" size="icon" onClick={playCurrent} disabled={!speechAvailable} aria-label={`Pronounce ${current.word}`} title={speechAvailable ? "Press Space to pronounce" : "Speech is unavailable in this browser"}><Volume2 className="size-4" /></Button>
       </header>
 
       <div className="mx-auto mt-4 h-px w-full max-w-5xl bg-border"><div className="h-px bg-foreground transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></div>
@@ -298,7 +298,7 @@ export function ReviewSession() {
           type="button"
           onClick={() => setFlippedId(flipped ? null : current._id)}
           className="group flex min-h-[26rem] w-full items-center justify-center border-y border-border px-4 py-12 text-center outline-none transition-colors hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring sm:min-h-[30rem] sm:px-14 motion-reduce:transition-none"
-          aria-label={flipped ? "显示卡片正面" : "翻到卡片背面"}
+          aria-label={flipped ? "Show card front" : "Show card back"}
           aria-pressed={flipped}
         >
           {flipped ? (
@@ -307,19 +307,19 @@ export function ReviewSession() {
             <div>
               <LanguageBadge language={current.language} />
               <h1 className="mt-8 font-serif text-[clamp(3.5rem,12vw,7.5rem)] font-normal leading-none tracking-[-0.055em]">{current.word}</h1>
-              <p className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground"><CornerDownLeft className="size-3.5" aria-hidden="true" />Enter 翻面</p>
+              <p className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground"><CornerDownLeft className="size-3.5" aria-hidden="true" />Enter · Flip</p>
             </div>
           )}
         </button>
 
         <div className={cn("mt-7 grid w-full grid-cols-2 gap-3 transition-opacity motion-reduce:transition-none", !flipped && "pointer-events-none opacity-35")} aria-hidden={!flipped}>
-          <Button type="button" variant="outline" className="h-14" onClick={() => void rateCurrent("forgot")} disabled={!flipped || rating}><RotateCcw className="size-4" aria-hidden="true" />忘记了 <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">1</kbd></Button>
-          <Button type="button" className="h-14" onClick={() => void rateCurrent("remembered")} disabled={!flipped || rating}><Check className="size-4" aria-hidden="true" />记得 <kbd className="ml-auto font-mono text-[10px] opacity-65">2</kbd></Button>
+          <Button type="button" variant="outline" className="h-14" onClick={() => void rateCurrent("forgot")} disabled={!flipped || rating}><RotateCcw className="size-4" aria-hidden="true" />Forgot <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">1</kbd></Button>
+          <Button type="button" className="h-14" onClick={() => void rateCurrent("remembered")} disabled={!flipped || rating}><Check className="size-4" aria-hidden="true" />Remembered <kbd className="ml-auto font-mono text-[10px] opacity-65">2</kbd></Button>
         </div>
       </section>
 
       <footer className="mx-auto hidden w-full max-w-5xl justify-center gap-6 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:flex">
-        <span>Space · 发音</span><span>Enter · 翻面</span><span>Esc · 退出</span>
+        <span>Space · Pronounce</span><span>Enter · Flip</span><span>Esc · Exit</span>
       </footer>
     </main>
   );

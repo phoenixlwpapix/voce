@@ -8,7 +8,7 @@ type OwnershipCtx = QueryCtx | MutationCtx;
 export async function requireOwner(ctx: OwnershipCtx): Promise<Id<"users">> {
   const userId = (await getAuthUserId(ctx)) as Id<"users"> | null;
   if (userId === null) {
-    throw new ConvexError("请先登录后再继续。");
+    throw new ConvexError("Please sign in to continue.");
   }
 
   const owner = await ctx.db
@@ -17,7 +17,7 @@ export async function requireOwner(ctx: OwnershipCtx): Promise<Id<"users">> {
     .unique();
 
   if (owner?.userId !== userId) {
-    throw new ConvexError("这个词汇簿已绑定其他账号。");
+    throw new ConvexError("This lexicon belongs to another account.");
   }
 
   return userId;

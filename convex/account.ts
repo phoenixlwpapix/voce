@@ -14,14 +14,14 @@ export const claimOwnership = mutation({
   handler: async (ctx) => {
     const userId = (await getAuthUserId(ctx)) as Id<"users"> | null;
     if (userId === null) {
-      throw new ConvexError("请先登录后再继续。");
+      throw new ConvexError("Please sign in to continue.");
     }
 
     const user = await ctx.db.get(userId);
     const accountEmail = user?.email?.trim().toLowerCase();
     const allowedEmail = env.APP_OWNER_EMAIL.trim().toLowerCase();
     if (accountEmail !== allowedEmail) {
-      throw new ConvexError("这个账号不在词汇簿的允许名单中。");
+      throw new ConvexError("This account is not on the lexicon's allowlist.");
     }
 
     const owner = await ctx.db
@@ -30,7 +30,7 @@ export const claimOwnership = mutation({
       .unique();
 
     if (owner && owner.userId !== userId) {
-      throw new ConvexError("这个词汇簿已绑定其他账号。");
+      throw new ConvexError("This lexicon belongs to another account.");
     }
 
     if (!owner) {
@@ -65,7 +65,7 @@ export const assertOwner = internalQuery({
       .withIndex("by_key", (index) => index.eq("key", ownerKey))
       .unique();
     if (owner?.userId !== args.userId) {
-      throw new ConvexError("这个词汇簿已绑定其他账号。");
+      throw new ConvexError("This lexicon belongs to another account.");
     }
     return null;
   },

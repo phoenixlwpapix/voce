@@ -8,13 +8,13 @@ import { z } from "zod";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { languageNames, lookupPlaceholderByLanguage, maxWordLength } from "@/lib/constants";
+import { languageNames, localeByLanguage, lookupPlaceholderByLanguage, maxWordLength } from "@/lib/constants";
 import { getUserErrorMessage } from "@/lib/errors";
 import { getLocalMonthGroup } from "@/lib/month";
 import { cn } from "@/lib/utils";
 import type { Language } from "@/lib/types";
 
-const inputSchema = z.string().trim().min(1, "请输入要查询的单词。").max(maxWordLength, `最多输入 ${maxWordLength} 个字符。`);
+const inputSchema = z.string().trim().min(1, "Enter a word to look up.").max(maxWordLength, `Enter no more than ${maxWordLength} characters.`);
 
 const languagePillClasses: Record<Language, string> = {
   EN: "data-[active=true]:border-en data-[active=true]:text-en",
@@ -40,11 +40,11 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
 
     const validation = inputSchema.safeParse(value);
     if (!validation.success) {
-      setError(validation.error.issues[0]?.message ?? "输入无效。");
+      setError(validation.error.issues[0]?.message ?? "Invalid input.");
       return;
     }
     if (!navigator.onLine) {
-      setError("当前处于离线状态，请恢复网络后重试。");
+      setError("You're offline. Reconnect and try again.");
       return;
     }
 
@@ -58,8 +58,8 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
         monthGroup: getLocalMonthGroup(),
       });
       setValue("");
-      toast.success(result.status === "created" ? `已收录 ${result.word}` : `已刷新 ${result.word}`, {
-        description: result.status === "created" ? "它已出现在本月词汇中。" : "复习进度已为你保留。",
+      toast.success(result.status === "created" ? `Added ${result.word}` : `Refreshed ${result.word}`, {
+        description: result.status === "created" ? "Added to this month's collection." : "Your review progress was preserved.",
       });
     } catch (caughtError) {
       setError(getUserErrorMessage(caughtError));
@@ -80,7 +80,7 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
 
       <form onSubmit={handleSubmit} noValidate>
         <fieldset className="mb-4 flex justify-center gap-2" disabled={submitting}>
-          <legend className="sr-only">选择单词语言</legend>
+          <legend className="sr-only">Choose vocabulary language</legend>
           {(["EN", "FR", "ES"] as const).map((item) => (
             <button
               key={item}
@@ -100,7 +100,7 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
         </fieldset>
 
         <div className="relative flex items-center gap-4 border-y border-border/70 py-1.5 transition-colors focus-within:border-foreground motion-reduce:transition-none">
-          <label htmlFor="word-input" className="sr-only">输入{languageNames[language]}单词</label>
+          <label htmlFor="word-input" className="sr-only">Enter a word in {languageNames[language]}</label>
           <Input
             id="word-input"
             value={value}
@@ -109,6 +109,7 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
               if (error) setError(null);
             }}
             placeholder={lookupPlaceholderByLanguage[language]}
+            lang={localeByLanguage[language]}
             autoComplete="off"
             spellCheck={false}
             maxLength={maxWordLength + 1}
@@ -117,7 +118,7 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
             disabled={submitting}
             className="border-b-0 font-serif text-xl focus:border-transparent sm:text-2xl"
           />
-          <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting} aria-label={submitting ? "正在查询" : "查询并收藏"}>
+          <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting} aria-label={submitting ? "Looking up" : "Look up and save"}>
             {submitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUpRight className="size-4" aria-hidden="true" />}
           </Button>
         </div>

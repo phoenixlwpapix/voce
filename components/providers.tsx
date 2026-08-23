@@ -24,9 +24,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <main className="grid min-h-dvh place-items-center px-5 text-center">
           <div className="max-w-lg border-y border-border py-14">
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Setup required</p>
-            <h1 className="mt-4 font-serif text-4xl tracking-[-0.04em]">Voce 还差一条连接。</h1>
+            <h1 className="mt-4 font-serif text-4xl tracking-[-0.04em]">Voce needs a connection.</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              请在 <code className="font-mono text-foreground">.env.local</code> 中配置 <code className="font-mono text-foreground">NEXT_PUBLIC_CONVEX_URL</code>，然后重新启动开发服务器。
+              Set <code className="font-mono text-foreground">NEXT_PUBLIC_CONVEX_URL</code> in <code className="font-mono text-foreground">.env.local</code>, then restart the development server.
             </p>
           </div>
         </main>

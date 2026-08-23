@@ -21,9 +21,9 @@ type WordRowProps = {
 };
 
 const genderLabel = {
-  masculine: "阳性",
-  feminine: "阴性",
-  neutral: "中性",
+  masculine: "Masculine",
+  feminine: "Feminine",
+  neutral: "Neutral",
 } as const;
 
 export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
@@ -38,7 +38,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
     try {
       await deleteWord({ id: word._id });
       setDialogOpen(false);
-      toast.success(`已删除 ${word.word}`);
+      toast.success(`Deleted ${word.word}`);
     } catch (error) {
       toast.error(getUserErrorMessage(error));
     } finally {
@@ -55,7 +55,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
         </div>
         <LanguageBadge language={word.language} className="hidden justify-self-start sm:inline-flex" />
         <p className="hidden truncate font-mono text-xs text-muted-foreground sm:block">{formatPhonetic(word.phonetic)}</p>
-        <p className="col-span-2 mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground sm:col-span-1 sm:mt-0 sm:line-clamp-1">
+        <p lang="zh-CN" className="col-span-2 mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground sm:col-span-1 sm:mt-0 sm:line-clamp-1">
           {word.definitions[0]?.meaningZh}
           {word.definitions.length > 1 ? <span className="ml-1 font-mono text-[10px]">+{word.definitions.length - 1}</span> : null}
         </p>
@@ -66,8 +66,8 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
             size="icon"
             onClick={() => onSpeak(word.word, word.language)}
             disabled={!speechAvailable}
-            aria-label={`朗读 ${word.word}`}
-            title={speechAvailable ? "播放发音" : "此浏览器不支持语音朗读"}
+            aria-label={`Pronounce ${word.word}`}
+            title={speechAvailable ? "Play pronunciation" : "Speech is unavailable in this browser"}
           >
             <Volume2 className="size-4" aria-hidden="true" />
           </Button>
@@ -78,7 +78,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
             onClick={() => setExpanded((current) => !current)}
             aria-expanded={expanded}
             aria-controls={detailsId}
-            aria-label={expanded ? "收起词条详情" : "展开词条详情"}
+            aria-label={expanded ? "Collapse word details" : "Expand word details"}
           >
             <ChevronDown className={cn("size-4 transition-transform motion-reduce:transition-none", expanded && "rotate-180")} aria-hidden="true" />
           </Button>
@@ -94,16 +94,16 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
                 {word.definitions.map((definition, index) => (
                   <li key={`${definition.partOfSpeech}-${index}`} className="grid grid-cols-[1.25rem_1fr] gap-2 text-sm leading-6">
                     <span className="font-mono text-[10px] text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
-                    <span><i className="mr-2 text-muted-foreground">{definition.partOfSpeech}</i>{definition.meaningZh}</span>
+                    <span><i className="mr-2 text-muted-foreground">{definition.partOfSpeech}</i><span lang="zh-CN">{definition.meaningZh}</span></span>
                   </li>
                 ))}
               </ol>
 
               {word.grammar ? (
                 <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-l border-border pl-4 text-xs text-muted-foreground">
-                  {word.grammar.gender ? <span>词性 · {genderLabel[word.grammar.gender]}</span> : null}
-                  {word.grammar.infinitive ? <span>原形 · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
-                  {word.grammar.noteZh ? <span className="basis-full">{word.grammar.noteZh}</span> : null}
+                  {word.grammar.gender ? <span>Gender · {genderLabel[word.grammar.gender]}</span> : null}
+                  {word.grammar.infinitive ? <span>Infinitive · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
+                  {word.grammar.noteZh ? <span lang="zh-CN" className="basis-full">{word.grammar.noteZh}</span> : null}
                 </div>
               ) : null}
             </div>
@@ -114,26 +114,26 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
                 {word.examples.map((example, index) => (
                   <blockquote key={`${example.target}-${index}`} className="border-l border-border pl-4">
                     <p className="font-serif text-lg leading-6">{example.target}</p>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{example.translationZh}</p>
+                    <p lang="zh-CN" className="mt-1 text-xs leading-5 text-muted-foreground">{example.translationZh}</p>
                   </blockquote>
                 ))}
               </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4 text-[10px] text-muted-foreground sm:col-span-2">
-              <p className="font-mono tracking-[0.08em]">收录 {formatRecordDate(word.createdAt)}{word.updatedAt > word.createdAt + 1000 ? ` · 更新 ${formatRecordDate(word.updatedAt)}` : ""}</p>
+              <p className="font-mono tracking-[0.08em]">Added {formatRecordDate(word.createdAt)}{word.updatedAt > word.createdAt + 1000 ? ` · Updated ${formatRecordDate(word.updatedAt)}` : ""}</p>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button type="button" variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="size-3.5" aria-hidden="true" />删除
+                    <Trash2 className="size-3.5" aria-hidden="true" />Delete
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogTitle>删除“{word.word}”？</DialogTitle>
-                  <DialogDescription>词义、例句和已经积累的复习进度都会被永久删除。此操作无法撤销。</DialogDescription>
+                  <DialogTitle>Delete “{word.word}”?</DialogTitle>
+                  <DialogDescription>Definitions, examples, and review progress will be permanently deleted. This can&apos;t be undone.</DialogDescription>
                   <div className="mt-7 flex justify-end gap-3">
-                    <DialogClose asChild><Button type="button" variant="ghost" disabled={deleting}>保留词条</Button></DialogClose>
-                    <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? "正在删除…" : "确认删除"}</Button>
+                    <DialogClose asChild><Button type="button" variant="ghost" disabled={deleting}>Keep word</Button></DialogClose>
+                    <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? "Deleting…" : "Delete permanently"}</Button>
                   </div>
                 </DialogContent>
               </Dialog>

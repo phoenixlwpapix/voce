@@ -40,11 +40,11 @@ function SignInScreen() {
     const password = String(formData.get("password") ?? "");
 
     if (!email || !email.includes("@")) {
-      setError("请输入有效的邮箱地址。");
+      setError("Enter a valid email address.");
       return;
     }
     if (password.length < 8) {
-      setError("密码至少需要 8 个字符。");
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -55,8 +55,8 @@ function SignInScreen() {
     } catch {
       setError(
         mode === "signIn"
-          ? "邮箱或密码不正确，请重新输入。"
-          : "账号创建失败；如果邮箱已注册，请切换到登录。",
+          ? "Incorrect email or password. Try again."
+          : "Couldn't create the account. If this email is already registered, switch to sign in.",
       );
     } finally {
       setSubmitting(false);
@@ -96,12 +96,12 @@ function SignInScreen() {
             Words worth returning to.
           </h2>
           <p className="mt-9 text-base leading-7 text-muted-foreground">
-            把遇见的词，慢慢变成自己的。
+            Collect it. Revisit it. Make it yours.
           </p>
         </div>
 
         <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-          English · Français · Español
+          English · French · Spanish
         </p>
       </section>
 
@@ -122,15 +122,15 @@ function SignInScreen() {
             Private access
           </p>
           <h1 className="mt-3 font-serif text-5xl tracking-[-0.05em] sm:text-6xl">
-            {mode === "signIn" ? "欢迎回来。" : "创建你的账号。"}
+            {mode === "signIn" ? "Welcome back." : "Create your account."}
           </h1>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
             {mode === "signIn"
-              ? "登录后继续收录与复习你的词汇。"
-              : "第一个创建的账号会成为这个词汇簿的唯一所有者。"}
+              ? "Sign in to keep collecting and reviewing your words."
+              : "The first account created becomes the sole owner of this lexicon."}
           </p>
 
-          <div className="mt-10 grid grid-cols-2 border-y border-border" role="tablist" aria-label="账号操作">
+          <div className="mt-10 grid grid-cols-2 border-y border-border" role="tablist" aria-label="Account options">
             <button
               type="button"
               role="tab"
@@ -138,7 +138,7 @@ function SignInScreen() {
               onClick={() => changeMode("signIn")}
               className="h-11 border-r border-border text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring aria-selected:bg-secondary aria-selected:text-foreground motion-reduce:transition-none"
             >
-              登录
+              Sign in
             </button>
             <button
               type="button"
@@ -147,7 +147,7 @@ function SignInScreen() {
               onClick={() => changeMode("signUp")}
               className="h-11 text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring aria-selected:bg-secondary aria-selected:text-foreground motion-reduce:transition-none"
             >
-              创建账号
+              Create account
             </button>
           </div>
 
@@ -177,7 +177,7 @@ function SignInScreen() {
                 name="password"
                 type="password"
                 autoComplete={mode === "signIn" ? "current-password" : "new-password"}
-                placeholder="至少 8 个字符"
+                placeholder="At least 8 characters"
                 minLength={8}
                 required
                 disabled={submitting}
@@ -201,7 +201,7 @@ function SignInScreen() {
               ) : (
                 <ArrowRight className="size-4" aria-hidden="true" />
               )}
-              {submitting ? "正在验证…" : mode === "signIn" ? "登录 Voce" : "创建并进入 Voce"}
+              {submitting ? "Checking…" : mode === "signIn" ? "Sign in to Voce" : "Create and enter Voce"}
             </Button>
           </form>
 
@@ -231,7 +231,7 @@ function OwnerGate({ children }: { children: React.ReactNode }) {
   }, [claimOwnership]);
 
   if (status === "checking") {
-    return <LoadingScreen label="正在打开你的词汇簿…" />;
+    return <LoadingScreen label="Opening your lexicon…" />;
   }
 
   if (status === "denied") {
@@ -242,12 +242,12 @@ function OwnerGate({ children }: { children: React.ReactNode }) {
           <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
             Access restricted
           </p>
-          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">这个词汇簿已有主人。</h1>
+          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">This lexicon already has an owner.</h1>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            当前账号不能访问词汇，也不能调用 Gemini 查询。
+            This account can&apos;t access the vocabulary or use Gemini lookups.
           </p>
           <Button type="button" variant="outline" className="mt-8" onClick={() => void signOut()}>
-            退出当前账号
+            Sign out
           </Button>
         </div>
       </main>
@@ -261,7 +261,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
 
   if (isLoading) {
-    return <LoadingScreen label="正在确认登录状态…" />;
+    return <LoadingScreen label="Checking your session…" />;
   }
   if (!isAuthenticated) {
     return <SignInScreen />;

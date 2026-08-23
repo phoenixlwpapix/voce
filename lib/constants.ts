@@ -8,8 +8,8 @@ export const localeByLanguage: Record<Language, string> = {
 
 export const languageNames: Record<Language, string> = {
   EN: "English",
-  FR: "Français",
-  ES: "Español",
+  FR: "French",
+  ES: "Spanish",
 };
 
 export const lookupPlaceholderByLanguage: Record<Language, string> = {

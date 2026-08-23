@@ -14,7 +14,7 @@ export const getWordsByMonth = query({
     const ownerId = await requireOwner(ctx);
     if (args.monthGroup !== undefined) {
       if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(args.monthGroup)) {
-        throw new ConvexError("月份格式无效。");
+        throw new ConvexError("Invalid month format.");
       }
       const words = await ctx.db
         .query("words")
@@ -39,7 +39,7 @@ export const getReviewQueue = query({
   handler: async (ctx, args) => {
     const ownerId = await requireOwner(ctx);
     if (!Number.isFinite(args.now) || args.now <= 0) {
-      throw new ConvexError("复习时间无效。");
+      throw new ConvexError("Invalid review time.");
     }
     return await ctx.db
       .query("words")
@@ -66,10 +66,10 @@ export const updateReviewState = mutation({
     const ownerId = await requireOwner(ctx);
     const word = await ctx.db.get(args.id);
     if (!word) {
-      throw new ConvexError("这个词条已不存在。");
+      throw new ConvexError("This word no longer exists.");
     }
     if (word.ownerId !== ownerId) {
-      throw new ConvexError("你无权修改这个词条。");
+      throw new ConvexError("You don't have permission to update this word.");
     }
 
     let repetitions: number;
@@ -114,10 +114,10 @@ export const deleteWord = mutation({
     const ownerId = await requireOwner(ctx);
     const word = await ctx.db.get(args.id);
     if (!word) {
-      throw new ConvexError("这个词条已不存在。");
+      throw new ConvexError("This word no longer exists.");
     }
     if (word.ownerId !== ownerId) {
-      throw new ConvexError("你无权删除这个词条。");
+      throw new ConvexError("You don't have permission to delete this word.");
     }
     await ctx.db.delete(args.id);
     return null;

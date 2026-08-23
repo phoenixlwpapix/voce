@@ -2,7 +2,7 @@
 
 Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, and Spanish words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, and a deterministic two-button scheduler powers review.
 
-The editorial interface includes a responsive split-screen sign-in cover built around Voce's open-book mark, with a compact mobile treatment for smaller screens.
+The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. Lookup placeholders stay native to English, French, and Spanish, while generated learning definitions and translations remain in Simplified Chinese.
 
 Production: https://voce-fawn.vercel.app
 
@@ -79,7 +79,7 @@ Open `http://localhost:3000`. The lookup month is generated in the browser's loc
 
 ## First account
 
-Choose **创建账号** on the login screen and register with the email configured as `APP_OWNER_EMAIL` and a password of at least eight characters. That account becomes the only owner of this personal notebook. Existing words are assigned to it automatically in batches.
+Choose **Create account** on the login screen and register with the email configured as `APP_OWNER_EMAIL` and a password of at least eight characters. That account becomes the only owner of this personal notebook. Existing words are assigned to it automatically in batches.
 
 Later accounts may authenticate but cannot read, edit, delete, review, or create words, and are rejected before a Gemini request is made. Create the owner account before exposing a new deployment publicly.
 

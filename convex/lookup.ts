@@ -101,12 +101,12 @@ type LookupActionResult = {
 function safeGenerationError(error: unknown): never {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (message.includes("429") || message.includes("rate") || message.includes("quota")) {
-    throw new ConvexError("查询服务正忙，请稍后再试。");
+    throw new ConvexError("The lookup service is busy. Try again shortly.");
   }
   if (message.includes("timeout") || message.includes("deadline") || message.includes("abort")) {
-    throw new ConvexError("查询超时，请检查网络后重试。");
+    throw new ConvexError("The lookup timed out. Check your connection and try again.");
   }
-  throw new ConvexError("暂时无法完成查询，请稍后再试。");
+  throw new ConvexError("The lookup couldn't be completed. Try again shortly.");
 }
 
 export const lookupAndSave = action({
@@ -123,24 +123,24 @@ export const lookupAndSave = action({
   handler: async (ctx, args): Promise<LookupActionResult> => {
     const ownerId = (await getAuthUserId(ctx)) as Id<"users"> | null;
     if (ownerId === null) {
-      throw new ConvexError("请先登录后再继续。");
+      throw new ConvexError("Please sign in to continue.");
     }
     await ctx.runQuery(internal.account.assertOwner, { userId: ownerId });
 
     const inputWord = sanitizeInput(args.inputWord);
     if (!inputWord) {
-      throw new ConvexError("请输入要查询的单词。");
+      throw new ConvexError("Enter a word to look up.");
     }
     if (inputWord.length > maxWordLength) {
-      throw new ConvexError(`单词不能超过 ${maxWordLength} 个字符。`);
+      throw new ConvexError(`Words can't exceed ${maxWordLength} characters.`);
     }
     if (!monthPattern.test(args.monthGroup)) {
-      throw new ConvexError("月份格式无效，请刷新页面后重试。");
+      throw new ConvexError("Invalid month format. Refresh the page and try again.");
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new ConvexError("词典服务尚未配置，请联系维护者。");
+      throw new ConvexError("The lookup service isn't configured. Contact the maintainer.");
     }
 
     try {

@@ -1,4 +1,9 @@
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
+const recordDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 export function getLocalMonthGroup(date = new Date()) {
   const year = date.getFullYear();
@@ -15,9 +20,5 @@ export function isMonthGroup(value: string) {
 }
 
 export function formatRecordDate(timestamp: number) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(timestamp));
+  return recordDateFormatter.format(new Date(timestamp));
 }

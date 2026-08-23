@@ -18,11 +18,11 @@ export function SiteHeader() {
         <span className="font-serif text-2xl font-medium tracking-[-0.03em]">Voce</span>
         <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground sm:inline">Personal lexicon</span>
       </Link>
-      <nav className="flex items-center gap-1" aria-label="主导航">
+      <nav className="flex items-center gap-1" aria-label="Main navigation">
         <Button asChild variant="ghost" size="default" className="px-3 text-xs">
           <Link href="/review">
             <BookOpenText className="size-4" aria-hidden="true" />
-            <span>开始复习</span>
+            <span>Review</span>
           </Link>
         </Button>
         <ThemeToggle />
@@ -31,8 +31,8 @@ export function SiteHeader() {
           variant="ghost"
           size="icon"
           onClick={() => void signOut()}
-          aria-label={account?.email ? `退出 ${account.email}` : "退出登录"}
-          title={account?.email ? `退出 ${account.email}` : "退出登录"}
+          aria-label={account?.email ? `Sign out ${account.email}` : "Sign out"}
+          title={account?.email ? `Sign out ${account.email}` : "Sign out"}
         >
           <LogOut className="size-4" aria-hidden="true" />
         </Button>
