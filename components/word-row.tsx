@@ -32,6 +32,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const detailsId = `word-details-${word._id}`;
+  const isJapanese = word.language === "JA";
 
   async function handleDelete() {
     setDeleting(true);
@@ -50,11 +51,19 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
     <article className="border-b border-border content-auto">
       <div className="grid grid-cols-[1fr_auto] gap-x-3 py-5 sm:grid-cols-[minmax(10rem,1.1fr)_5rem_minmax(8rem,0.9fr)_minmax(12rem,1.5fr)_auto] sm:items-center sm:gap-x-5 sm:py-6">
         <div className="min-w-0">
-          <h3 className="truncate font-serif text-[1.65rem] leading-none tracking-[-0.025em]">{word.word}</h3>
-          <p className="mt-2 truncate font-ipa text-[11px] text-muted-foreground sm:hidden">{formatPhonetic(word.phonetic)}</p>
+          <h3
+            lang={isJapanese ? "ja-JP" : undefined}
+            className={cn(
+              "truncate font-serif text-[1.65rem] leading-none tracking-[-0.025em]",
+              isJapanese && "font-ja py-[0.08em] leading-[1.2] tracking-normal",
+            )}
+          >
+            {word.word}
+          </h3>
+          <p className={cn("mt-2 truncate font-ipa text-[11px] text-muted-foreground sm:hidden", isJapanese && "font-ja")} lang={isJapanese ? "ja-JP" : undefined}>{formatPhonetic(word.phonetic, word.language)}</p>
         </div>
         <LanguageBadge language={word.language} className="hidden justify-self-start sm:inline-flex" />
-        <p className="hidden truncate font-ipa text-xs text-muted-foreground sm:block">{formatPhonetic(word.phonetic)}</p>
+        <p className={cn("hidden truncate font-ipa text-xs text-muted-foreground sm:block", isJapanese && "font-ja")} lang={isJapanese ? "ja-JP" : undefined}>{formatPhonetic(word.phonetic, word.language)}</p>
         <p lang="zh-CN" className="col-span-2 mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground sm:col-span-1 sm:mt-0 sm:line-clamp-1">
           {word.definitions[0]?.meaningZh}
           {word.definitions.length > 1 ? <span className="ml-1 font-mono text-[10px]">+{word.definitions.length - 1}</span> : null}
@@ -113,7 +122,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
               <div className="space-y-5">
                 {word.examples.map((example, index) => (
                   <blockquote key={`${example.target}-${index}`} className="border-l border-border pl-4">
-                    <p className="font-serif text-lg leading-6">{example.target}</p>
+                    <p lang={isJapanese ? "ja-JP" : undefined} className={cn("font-serif text-lg leading-6", isJapanese && "font-ja tracking-normal")}>{example.target}</p>
                     <p lang="zh-CN" className="mt-1 text-xs leading-5 text-muted-foreground">{example.translationZh}</p>
                   </blockquote>
                 ))}

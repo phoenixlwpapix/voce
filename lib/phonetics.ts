@@ -1,3 +1,5 @@
+import type { Language } from "./types";
+
 export function normalizePhonetic(value: string) {
   let normalized = value.trim();
 
@@ -11,7 +13,8 @@ export function normalizePhonetic(value: string) {
   return normalized;
 }
 
-export function formatPhonetic(value: string) {
+export function formatPhonetic(value: string, language: Language) {
   const normalized = normalizePhonetic(value);
-  return normalized ? `/${normalized}/` : "";
+  if (!normalized) return "";
+  return language === "JA" ? normalized : `/${normalized}/`;
 }

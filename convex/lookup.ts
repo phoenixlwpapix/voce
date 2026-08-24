@@ -12,6 +12,7 @@ import { languageValidator } from "./validators";
 
 const maxWordLength = 80;
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
+const hiraganaReadingPattern = /^[\p{Script=Hiragana}ー・\s]+$/u;
 const nonBlank = z.string().trim().min(1).max(500);
 
 const vocabularyLookupSchema = z.object({
@@ -44,7 +45,10 @@ const responseJsonSchema = {
   additionalProperties: false,
   properties: {
     word: { type: "string", description: "Canonical display form of the requested word." },
-    phonetic: { type: "string", description: "IPA only, without slashes or explanatory prose." },
+    phonetic: {
+      type: "string",
+      description: "Hiragana reading only for Japanese; otherwise IPA only without slashes or explanatory prose.",
+    },
     definitions: {
       type: "array",
       minItems: 1,
@@ -151,7 +155,7 @@ export const lookupAndSave = action({
         contents: `Look up the ${languageInstruction[args.language]} vocabulary item: ${JSON.stringify(inputWord)}.`,
         config: {
           systemInstruction:
-            "You are a precise multilingual lexicographer for Chinese learners. Return the canonical word, IPA only, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. For relevant French or Spanish nouns include gender. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, put the infinitive or Japanese dictionary form in the infinitive field. For Japanese vocabulary, use the grammar note for a concise reading or usage note when helpful. Omit irrelevant grammar fields. Never use Markdown.",
+            "You are a precise multilingual lexicographer for Chinese learners. Return the canonical word, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. In the phonetic field, return Hiragana only for Japanese vocabulary; for every other language return IPA only. Never add slashes, brackets, pitch-accent numbers, or explanatory prose to the phonetic field. For relevant French or Spanish nouns include gender. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, put the infinitive or Japanese dictionary form in the infinitive field. For Japanese vocabulary, use the grammar note for a concise usage note when helpful. Omit irrelevant grammar fields. Never use Markdown.",
           temperature: 0.2,
           responseMimeType: "application/json",
           responseJsonSchema,
@@ -166,6 +170,9 @@ export const lookupAndSave = action({
 
       const parsedJson: unknown = JSON.parse(responseText);
       const result = vocabularyLookupSchema.parse(parsedJson);
+      if (args.language === "JA" && !hiraganaReadingPattern.test(result.phonetic)) {
+        throw new Error("Japanese pronunciation was not returned in Hiragana");
+      }
       return await ctx.runMutation(internal.internalWords.upsertLookupResult, {
         ownerId,
         inputWord,

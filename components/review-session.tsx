@@ -135,9 +135,11 @@ function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
 }
 
 function ReviewCardBack({ word }: { word: WordDocument }) {
+  const isJapanese = word.language === "JA";
+
   return (
     <div className="w-full text-left">
-      <p className="mb-7 text-center font-ipa text-sm text-muted-foreground">{formatPhonetic(word.phonetic)}</p>
+      <p lang={isJapanese ? "ja-JP" : undefined} className={cn("mb-7 text-center font-ipa text-sm text-muted-foreground", isJapanese && "font-ja")}>{formatPhonetic(word.phonetic, word.language)}</p>
       <div className="space-y-3">
         {word.definitions.map((definition, index) => (
           <div key={`${definition.partOfSpeech}-${index}`} className="grid grid-cols-[2rem_1fr] gap-2 text-sm leading-6 sm:text-base">
@@ -156,7 +158,7 @@ function ReviewCardBack({ word }: { word: WordDocument }) {
       <div className="space-y-5">
         {word.examples.map((example, index) => (
           <blockquote key={`${example.target}-${index}`} className="border-l border-border pl-4">
-            <p className="font-serif text-lg leading-6">{example.target}</p>
+            <p lang={isJapanese ? "ja-JP" : undefined} className={cn("font-serif text-lg leading-6", isJapanese && "font-ja tracking-normal")}>{example.target}</p>
             <p lang="zh-CN" className="mt-1 text-xs leading-5 text-muted-foreground">{example.translationZh}</p>
           </blockquote>
         ))}
@@ -307,7 +309,15 @@ export function ReviewSession() {
           ) : (
             <div>
               <LanguageBadge language={current.language} />
-              <h1 className="mt-8 font-serif text-[clamp(3.5rem,12vw,7.5rem)] font-normal leading-none tracking-[-0.055em]">{current.word}</h1>
+              <h1
+                lang={current.language === "JA" ? "ja-JP" : undefined}
+                className={cn(
+                  "mt-8 font-serif text-[clamp(3.5rem,12vw,7.5rem)] font-normal leading-none tracking-[-0.055em]",
+                  current.language === "JA" && "font-ja py-[0.08em] leading-[1.18] tracking-normal",
+                )}
+              >
+                {current.word}
+              </h1>
               <p className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground"><CornerDownLeft className="size-3.5" aria-hidden="true" />Enter · Flip</p>
             </div>
           )}

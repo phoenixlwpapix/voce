@@ -46,6 +46,7 @@
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-ibm-plex-mono);
   --font-ipa: var(--font-noto-sans);
+  --font-ja: var(--font-noto-sans-jp);
 }
 
 * {

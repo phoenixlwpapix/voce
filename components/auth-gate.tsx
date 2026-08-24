@@ -101,7 +101,7 @@ function SignInScreen() {
         </div>
 
         <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-          English · French · Spanish
+          English · French · Spanish · Japanese
         </p>
       </section>
 

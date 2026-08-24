@@ -118,6 +118,8 @@ Opening `/review` first shows a setup screen. Choose one language (`EN`, `FR`, `
 
 Shortcuts are ignored while an input, textarea, select, or editable element is focused. Pronunciation uses the browser Web Speech API with exact-locale, language-prefix, then default-voice fallback.
 
+Generated pronunciation is stored as IPA for English, French, and Spanish, and as a Hiragana reading for Japanese. Japanese word forms use a dedicated Japanese font and language-aware line height to avoid glyph clipping at display sizes.
+
 ## Data behavior
 
 - Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
