@@ -13,6 +13,7 @@
   --en: #5b6b82;
   --fr: #8c6d68;
   --es: #7d7a5e;
+  --ja: #557568;
 }
 
 .dark {
@@ -26,6 +27,7 @@
   --en: #5b6b82;
   --fr: #8c6d68;
   --es: #7d7a5e;
+  --ja: #557568;
 }
 
 @theme inline {
@@ -39,6 +41,7 @@
   --color-en: var(--en);
   --color-fr: var(--fr);
   --color-es: var(--es);
+  --color-ja: var(--ja);
   --font-serif: var(--font-newsreader);
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-ibm-plex-mono);

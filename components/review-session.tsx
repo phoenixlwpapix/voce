@@ -14,7 +14,7 @@ import { getUserErrorMessage } from "@/lib/errors";
 import { getLocalMonthGroup } from "@/lib/month";
 import { formatPhonetic } from "@/lib/phonetics";
 import { cn } from "@/lib/utils";
-import type { Language, WordDocument } from "@/lib/types";
+import { languages, type Language, type WordDocument } from "@/lib/types";
 
 const genderLabel = { masculine: "Masculine", feminine: "Feminine", neutral: "Neutral" } as const;
 
@@ -41,6 +41,7 @@ const languageSelectionClasses: Record<Language, string> = {
   EN: "data-[active=true]:text-en",
   FR: "data-[active=true]:text-fr",
   ES: "data-[active=true]:text-es",
+  JA: "data-[active=true]:text-ja",
 };
 
 function getRangeCutoff(range: ReviewRange, timestamp: number) {
@@ -78,8 +79,8 @@ function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
 
           <fieldset>
             <legend className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Language</legend>
-            <div className="grid grid-cols-3 border-y border-border">
-              {(["EN", "FR", "ES"] as const).map((item, index) => (
+            <div className="grid grid-cols-4 border-y border-border">
+              {languages.map((item, index) => (
                 <button
                   key={item}
                   type="button"
@@ -87,7 +88,7 @@ function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
                   onClick={() => setLanguage(item)}
                   className={cn(
                     "h-12 border-border font-mono text-xs tracking-[0.16em] text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-[active=true]:bg-secondary data-[active=true]:font-medium motion-reduce:transition-none",
-                    index < 2 && "border-r",
+                    index < languages.length - 1 && "border-r",
                     languageSelectionClasses[item],
                   )}
                   aria-pressed={language === item}

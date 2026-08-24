@@ -1,8 +1,8 @@
 # Voce
 
-Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, and Spanish words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, and a deterministic two-button scheduler powers review.
+Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, and a deterministic two-button scheduler powers review.
 
-The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. Lookup placeholders stay native to English, French, and Spanish, while generated learning definitions and translations remain in Simplified Chinese.
+The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
 Production: https://voce-fawn.vercel.app
 
@@ -106,7 +106,7 @@ The Gemini and JWT private keys must never be configured as public Next.js envir
 
 ## Review shortcuts
 
-Opening `/review` first shows a setup screen. Choose one language (`EN`, `FR`, or `ES`) and a collection range: the current month, the latest three calendar months, or all time. Only due words matching both choices enter the session, and the completion screen can return to the selector for another group.
+Opening `/review` first shows a setup screen. Choose one language (`EN`, `FR`, `ES`, or `JA`) and a collection range: the current month, the latest three calendar months, or all time. Only due words matching both choices enter the session, and the completion screen can return to the selector for another group.
 
 | Key | Action |
 | --- | --- |
@@ -120,7 +120,7 @@ Shortcuts are ignored while an input, textarea, select, or editable element is f
 
 ## Data behavior
 
-- Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve French and Spanish accents.
+- Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
 - All vocabulary queries, mutations, review updates, and Gemini actions require the authenticated app owner; duplicates are scoped to that owner.
 - Refreshing a duplicate updates generated vocabulary content while retaining review progress and its original month.
 - The home timeline follows the active lookup language; review sessions can independently select a language and collection-time range.

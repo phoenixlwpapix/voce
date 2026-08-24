@@ -1,9 +1,10 @@
-export type Language = "EN" | "FR" | "ES";
+export type Language = "EN" | "FR" | "ES" | "JA";
 
 const localeByLanguage: Record<Language, string> = {
   EN: "en-US",
   FR: "fr-FR",
   ES: "es-ES",
+  JA: "ja-JP",
 };
 
 export function sanitizeInput(value: string) {

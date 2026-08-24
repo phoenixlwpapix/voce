@@ -5,6 +5,7 @@ const languageClasses: Record<Language, string> = {
   EN: "border-en/25 bg-en/8 text-en dark:text-[#9eabbc]",
   FR: "border-fr/25 bg-fr/8 text-fr dark:text-[#b8948d]",
   ES: "border-es/25 bg-es/8 text-es dark:text-[#aaa681]",
+  JA: "border-ja/25 bg-ja/8 text-ja dark:text-[#9eb5aa]",
 };
 
 export function LanguageBadge({ language, className }: { language: Language; className?: string }) {

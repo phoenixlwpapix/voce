@@ -10,7 +10,7 @@ const ipa = Noto_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-noto-
 
 export const metadata: Metadata = {
   title: { default: "Voce — Personal Lexicon", template: "%s · Voce" },
-  description: "A quiet multilingual vocabulary notebook for English, French and Spanish.",
+  description: "A quiet multilingual vocabulary notebook for English, French, Spanish and Japanese.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

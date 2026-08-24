@@ -90,6 +90,7 @@ const languageInstruction = {
   EN: "English",
   FR: "French",
   ES: "Spanish",
+  JA: "Japanese",
 } as const;
 
 type LookupActionResult = {
@@ -150,7 +151,7 @@ export const lookupAndSave = action({
         contents: `Look up the ${languageInstruction[args.language]} vocabulary item: ${JSON.stringify(inputWord)}.`,
         config: {
           systemInstruction:
-            "You are a precise multilingual lexicographer for Chinese learners. Return the canonical word, IPA only, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. For relevant French or Spanish nouns include gender. For conjugated French or Spanish verbs include the infinitive. Omit irrelevant grammar fields. Never use Markdown.",
+            "You are a precise multilingual lexicographer for Chinese learners. Return the canonical word, IPA only, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. For relevant French or Spanish nouns include gender. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, put the infinitive or Japanese dictionary form in the infinitive field. For Japanese vocabulary, use the grammar note for a concise reading or usage note when helpful. Omit irrelevant grammar fields. Never use Markdown.",
           temperature: 0.2,
           responseMimeType: "application/json",
           responseJsonSchema,

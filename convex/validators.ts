@@ -4,6 +4,7 @@ export const languageValidator = v.union(
   v.literal("EN"),
   v.literal("FR"),
   v.literal("ES"),
+  v.literal("JA"),
 );
 
 export const lookupResultValidator = v.object({

@@ -34,7 +34,12 @@ export default defineSchema({
     inputWord: v.string(),
     normalizedWord: v.string(),
     word: v.string(),
-    language: v.union(v.literal("EN"), v.literal("FR"), v.literal("ES")),
+    language: v.union(
+      v.literal("EN"),
+      v.literal("FR"),
+      v.literal("ES"),
+      v.literal("JA"),
+    ),
     phonetic: v.string(),
     definitions: v.array(definition),
     grammar: v.optional(grammar),

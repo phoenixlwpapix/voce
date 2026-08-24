@@ -12,7 +12,7 @@ import { languageNames, localeByLanguage, lookupPlaceholderByLanguage, maxWordLe
 import { getUserErrorMessage } from "@/lib/errors";
 import { getLocalMonthGroup } from "@/lib/month";
 import { cn } from "@/lib/utils";
-import type { Language } from "@/lib/types";
+import { languages, type Language } from "@/lib/types";
 
 const inputSchema = z.string().trim().min(1, "Enter a word to look up.").max(maxWordLength, `Enter no more than ${maxWordLength} characters.`);
 
@@ -20,6 +20,7 @@ const languagePillClasses: Record<Language, string> = {
   EN: "data-[active=true]:border-en data-[active=true]:text-en",
   FR: "data-[active=true]:border-fr data-[active=true]:text-fr",
   ES: "data-[active=true]:border-es data-[active=true]:text-es",
+  JA: "data-[active=true]:border-ja data-[active=true]:text-ja",
 };
 
 type LookupFormProps = {
@@ -81,7 +82,7 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
       <form onSubmit={handleSubmit} noValidate>
         <fieldset className="mb-4 flex justify-center gap-2" disabled={submitting}>
           <legend className="sr-only">Choose vocabulary language</legend>
-          {(["EN", "FR", "ES"] as const).map((item) => (
+          {languages.map((item) => (
             <button
               key={item}
               type="button"
