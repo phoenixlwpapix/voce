@@ -73,7 +73,7 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
   return (
     <section className="mx-auto w-full max-w-2xl px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20" aria-labelledby="lookup-title">
       <div className="mb-9 text-center">
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">A quiet place for words</p>
+        <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Words worth keeping</p>
         <h1 id="lookup-title" className="font-serif text-[clamp(2.35rem,8vw,5.25rem)] font-normal leading-[0.95] tracking-[-0.055em]">
           What will you<br />remember today?
         </h1>
