@@ -13,6 +13,7 @@ const pairingLifetimeMs = 10 * 60 * 1000;
 const pairingAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const pairingPattern = /^VOCE-[2-9A-HJ-NP-Z]{5}-[2-9A-HJ-NP-Z]{5}$/;
 const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
+const deviceIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function hashSecret(value: string) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -46,16 +47,25 @@ export const createPairingCodeForOwner = action({
 });
 
 export const redeemPairingCode = internalAction({
-  args: { code: v.string() },
+  args: {
+    code: v.string(),
+    deviceId: v.string(),
+    deviceName: v.string(),
+  },
   returns: v.union(v.object({ token: v.string() }), v.null()),
   handler: async (ctx, args): Promise<{ token: string } | null> => {
     const code = args.code.trim().toUpperCase();
-    if (!pairingPattern.test(code)) return null;
+    const deviceName = args.deviceName.trim().replace(/\s+/g, " ").slice(0, 48);
+    if (!pairingPattern.test(code) || !deviceIdPattern.test(args.deviceId) || !deviceName) {
+      return null;
+    }
 
     const token = randomBytes(32).toString("base64url");
     const activated: boolean = await ctx.runMutation(internal.extensionAccess.activateToken, {
       codeHash: hashSecret(code),
       tokenHash: hashSecret(token),
+      deviceId: args.deviceId,
+      deviceName,
       now: Date.now(),
     });
     return activated ? { token } : null;

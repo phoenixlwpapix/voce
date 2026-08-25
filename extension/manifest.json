@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Voce — Personal Lexicon",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Save selected words to your private Voce lexicon.",
   "minimum_chrome_version": "114",
   "permissions": ["contextMenus", "storage"],

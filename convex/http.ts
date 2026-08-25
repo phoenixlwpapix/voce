@@ -38,12 +38,23 @@ http.route({
     } catch {
       return jsonResponse({ error: "Enter a valid pairing code." }, 400);
     }
-    if (!body || typeof body !== "object" || !("code" in body) || typeof body.code !== "string") {
+    if (
+      !body ||
+      typeof body !== "object" ||
+      !("code" in body) ||
+      typeof body.code !== "string" ||
+      !("deviceId" in body) ||
+      typeof body.deviceId !== "string" ||
+      !("deviceName" in body) ||
+      typeof body.deviceName !== "string"
+    ) {
       return jsonResponse({ error: "Enter a valid pairing code." }, 400);
     }
 
     const result = await ctx.runAction(internal.extensionAuth.redeemPairingCode, {
       code: body.code,
+      deviceId: body.deviceId,
+      deviceName: body.deviceName,
     });
     return result
       ? jsonResponse(result)

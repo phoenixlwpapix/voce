@@ -1,10 +1,11 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import { Check, Copy, LoaderCircle, Puzzle, ShieldCheck, Unplug } from "lucide-react";
+import { Check, Copy, Laptop, LoaderCircle, Puzzle, ShieldCheck, Unplug } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,21 +13,25 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { getUserErrorMessage } from "@/lib/errors";
 
 type PairingCode = { code: string; expiresAt: number };
+type Device = {
+  id: Id<"extensionDevices"> | "legacy";
+  name: string;
+  connectedAt: number;
+};
 
 export function ExtensionSetup() {
-  const status = useQuery(api.extensionAccess.getStatus);
+  const devices = useQuery(api.extensionAccess.listDevices);
   const createPairingCode = useAction(api.extensionAuth.createPairingCodeForOwner);
   const revoke = useMutation(api.extensionAccess.revoke);
   const [pairing, setPairing] = useState<PairingCode | null>(null);
   const [generating, setGenerating] = useState(false);
   const [revoking, setRevoking] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [disconnectTarget, setDisconnectTarget] = useState<Device | null>(null);
 
   async function handleGenerate() {
     if (generating) return;
@@ -53,13 +58,14 @@ export function ExtensionSetup() {
   }
 
   async function handleRevoke() {
-    if (revoking) return;
+    if (revoking || !disconnectTarget) return;
     setRevoking(true);
     try {
-      await revoke();
-      setPairing(null);
-      setDialogOpen(false);
-      toast.success("Chrome extension disconnected");
+      await revoke({
+        deviceId: disconnectTarget.id === "legacy" ? "legacy" : disconnectTarget.id,
+      });
+      setDisconnectTarget(null);
+      toast.success(`${disconnectTarget.name} disconnected`);
     } catch (error) {
       toast.error(getUserErrorMessage(error));
     } finally {
@@ -101,13 +107,17 @@ export function ExtensionSetup() {
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Connection</p>
               <p className="mt-2 text-sm font-medium">
-                {status === undefined ? "Checking…" : status.connected ? "Chrome connected" : "Not connected"}
+                {devices === undefined
+                  ? "Checking…"
+                  : devices.length === 0
+                    ? "No devices connected"
+                    : `${devices.length} ${devices.length === 1 ? "device" : "devices"} connected`}
               </p>
             </div>
             <span className="grid size-10 place-items-center rounded-full border border-border" aria-hidden="true">
-              {status === undefined ? (
+              {devices === undefined ? (
                 <LoaderCircle className="size-4 animate-spin text-muted-foreground motion-reduce:animate-none" />
-              ) : status.connected ? (
+              ) : devices.length > 0 ? (
                 <ShieldCheck className="size-4 text-ja" />
               ) : (
                 <Puzzle className="size-4 text-muted-foreground" />
@@ -142,29 +152,51 @@ export function ExtensionSetup() {
             </Button>
           </div>
 
-          {status?.connected ? (
-            <div className="mt-6 border-t border-border pt-6">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button type="button" variant="ghost" className="w-full text-muted-foreground hover:text-destructive">
-                    <Unplug className="size-4" aria-hidden="true" />Disconnect extension
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogTitle>Disconnect the Chrome extension?</DialogTitle>
-                  <DialogDescription>
-                    Its current access token will stop working immediately. You can connect it again with a new pairing code.
-                  </DialogDescription>
-                  <div className="mt-7 flex justify-end gap-3">
-                    <DialogClose asChild><Button type="button" variant="ghost" disabled={revoking}>Keep connected</Button></DialogClose>
-                    <Button type="button" variant="danger" onClick={() => void handleRevoke()} disabled={revoking}>
-                      {revoking ? "Disconnecting…" : "Disconnect"}
+          {devices && devices.length > 0 ? (
+            <div className="mt-8 border-t border-border pt-6">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Connected devices</p>
+              <ul className="mt-3 divide-y divide-border">
+                {devices.map((device) => (
+                  <li key={device.id} className="flex items-center gap-3 py-4">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary" aria-hidden="true">
+                      <Laptop className="size-4 text-muted-foreground" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{device.name}</p>
+                      <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
+                        Connected {new Date(device.connectedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => setDisconnectTarget(device)}
+                      aria-label={`Disconnect ${device.name}`}
+                    >
+                      <Unplug className="size-4" aria-hidden="true" />
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : null}
+
+          <Dialog open={disconnectTarget !== null} onOpenChange={(open) => { if (!open) setDisconnectTarget(null); }}>
+            <DialogContent>
+              <DialogTitle>Disconnect {disconnectTarget?.name}?</DialogTitle>
+              <DialogDescription>
+                Only this device will lose access. Your other connected computers will keep working.
+              </DialogDescription>
+              <div className="mt-7 flex justify-end gap-3">
+                <DialogClose asChild><Button type="button" variant="ghost" disabled={revoking}>Keep connected</Button></DialogClose>
+                <Button type="button" variant="danger" onClick={() => void handleRevoke()} disabled={revoking}>
+                  {revoking ? "Disconnecting…" : "Disconnect device"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </aside>
       </section>
     </main>

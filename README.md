@@ -89,7 +89,7 @@ Install and pair it:
 3. Sign in to Voce and open `/extension` from the header.
 4. Generate a one-time pairing code, open the extension popup, and redeem the code within ten minutes.
 
-The extension requests only `contextMenus`, `storage`, and host access to `https://grateful-caterpillar-393.convex.site/*`. It injects no content script and does not request browser-history or all-sites read access. Pairing codes and access tokens are stored only as SHA-256 hashes in Convex; the one returned access token is kept in extension-local storage restricted to trusted extension contexts. Generating a new pairing token replaces the previous extension token, and the connection can be revoked immediately from `/extension`.
+The extension requests only `contextMenus`, `storage`, and host access to `https://grateful-caterpillar-393.convex.site/*`. It injects no content script and does not request browser-history or all-sites read access. Pairing codes and access tokens are stored only as SHA-256 hashes in Convex; each installation keeps its own device ID and access token in extension-local storage restricted to trusted extension contexts. Pairing another computer does not invalidate existing devices, and each device can be revoked independently from `/extension`.
 
 Validate the unpacked extension source with:
 

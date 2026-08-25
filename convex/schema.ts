@@ -38,6 +38,17 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
+  extensionDevices: defineTable({
+    ownerId: v.id("users"),
+    deviceId: v.string(),
+    name: v.string(),
+    tokenHash: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_ownerId_and_updatedAt", ["ownerId", "updatedAt"])
+    .index("by_ownerId_and_deviceId", ["ownerId", "deviceId"])
+    .index("by_tokenHash", ["tokenHash"]),
   words: defineTable({
     ownerId: v.optional(v.id("users")),
     inputWord: v.string(),

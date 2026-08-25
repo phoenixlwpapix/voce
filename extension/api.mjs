@@ -11,6 +11,7 @@ export const languageNames = {
 const apiBase = "https://grateful-caterpillar-393.convex.site";
 const tokenKey = "voceAccessToken";
 const languageKey = "voceDefaultLanguage";
+const deviceIdKey = "voceDeviceId";
 
 export class VoceApiError extends Error {
   constructor(message, status) {
@@ -53,11 +54,24 @@ export async function clearToken() {
   await chrome.storage.local.remove(tokenKey);
 }
 
+async function getDeviceIdentity() {
+  const stored = await chrome.storage.local.get(deviceIdKey);
+  const deviceId = typeof stored[deviceIdKey] === "string"
+    ? stored[deviceIdKey]
+    : crypto.randomUUID();
+  if (stored[deviceIdKey] !== deviceId) {
+    await chrome.storage.local.set({ [deviceIdKey]: deviceId });
+  }
+  const platform = navigator.userAgentData?.platform || navigator.platform || "Computer";
+  return { deviceId, deviceName: `Chrome on ${platform}` };
+}
+
 export async function pairExtension(code) {
+  const device = await getDeviceIdentity();
   const response = await fetch(`${apiBase}/api/extension/pair`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code: code.trim().toUpperCase() }),
+    body: JSON.stringify({ code: code.trim().toUpperCase(), ...device }),
   });
   const result = await readJson(response);
   if (!result || typeof result.token !== "string") {
