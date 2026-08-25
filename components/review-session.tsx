@@ -56,8 +56,14 @@ function isTypingTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && (target.matches("input, textarea, select") || target.isContentEditable);
 }
 
-function ReviewSetup({ onStart }: { onStart: (config: ReviewConfig) => void }) {
-  const [language, setLanguage] = useState<Language>("EN");
+function ReviewSetup({
+  initialLanguage,
+  onStart,
+}: {
+  initialLanguage: Language;
+  onStart: (config: ReviewConfig) => void;
+}) {
+  const [language, setLanguage] = useState<Language>(initialLanguage);
   const [range, setRange] = useState<ReviewRange>("currentMonth");
 
   return (
@@ -167,7 +173,7 @@ function ReviewCardBack({ word }: { word: WordDocument }) {
   );
 }
 
-export function ReviewSession() {
+export function ReviewSession({ initialLanguage }: { initialLanguage: Language }) {
   const router = useRouter();
   const [reviewConfig, setReviewConfig] = useState<ReviewConfig | null>(null);
   const [queryTime, setQueryTime] = useState(() => Date.now());
@@ -253,7 +259,7 @@ export function ReviewSession() {
   }, [current, playCurrent, rateCurrent, reviewConfig, router]);
 
   if (!reviewConfig) {
-    return <ReviewSetup onStart={startReview} />;
+    return <ReviewSetup initialLanguage={initialLanguage} onStart={startReview} />;
   }
 
   if (queue === undefined) {

@@ -7,8 +7,9 @@ import { BookOpenText, LogOut, Puzzle } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import type { Language } from "@/lib/types";
 
-export function SiteHeader() {
+export function SiteHeader({ reviewLanguage }: { reviewLanguage?: Language }) {
   const { signOut } = useAuthActions();
   const account = useQuery(api.account.currentUser);
 
@@ -26,7 +27,7 @@ export function SiteHeader() {
           </Link>
         </Button>
         <Button asChild variant="ghost" size="default" className="px-3 text-xs">
-          <Link href="/review">
+          <Link href={reviewLanguage ? `/review?language=${reviewLanguage}` : "/review"}>
             <BookOpenText className="size-4" aria-hidden="true" />
             <span>Review</span>
           </Link>
