@@ -10,9 +10,12 @@
 
 import type * as account from "../account.js";
 import type * as auth from "../auth.js";
+import type * as extensionAccess from "../extensionAccess.js";
+import type * as extensionAuth from "../extensionAuth.js";
 import type * as http from "../http.js";
 import type * as internalWords from "../internalWords.js";
 import type * as lookup from "../lookup.js";
+import type * as lookupCore from "../lookupCore.js";
 import type * as normalization from "../normalization.js";
 import type * as ownership from "../ownership.js";
 import type * as validators from "../validators.js";
@@ -27,9 +30,12 @@ import type {
 declare const fullApi: ApiFromModules<{
   account: typeof account;
   auth: typeof auth;
+  extensionAccess: typeof extensionAccess;
+  extensionAuth: typeof extensionAuth;
   http: typeof http;
   internalWords: typeof internalWords;
   lookup: typeof lookup;
+  lookupCore: typeof lookupCore;
   normalization: typeof normalization;
   ownership: typeof ownership;
   validators: typeof validators;

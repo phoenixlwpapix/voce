@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:extension": "node --check extension/api.mjs && node --check extension/background.mjs && node --check extension/popup.mjs"
   },
   "dependencies": {
     "@convex-dev/auth": "0.0.95",

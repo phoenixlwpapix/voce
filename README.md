@@ -1,6 +1,6 @@
 # Voce
 
-Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, and a deterministic two-button scheduler powers review.
+Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, a deterministic two-button scheduler powers review, and a private Chrome companion saves words from any page.
 
 The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
@@ -78,6 +78,27 @@ pnpm dev:convex
 
 Open `http://localhost:3000`. The lookup month is generated in the browser's local timezone before the request is sent.
 
+## Chrome extension
+
+The unpacked Manifest V3 extension lives in `extension/` and talks only to the production Convex Site endpoint. It supports manual lookup from the toolbar popup and an **Add “selection” to Voce** context-menu action on selected page text. Japanese script is detected automatically; other selections use the last language chosen in the popup.
+
+Install and pair it:
+
+1. Open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked**.
+2. Select this repository's `extension` directory.
+3. Sign in to Voce and open `/extension` from the header.
+4. Generate a one-time pairing code, open the extension popup, and redeem the code within ten minutes.
+
+The extension requests only `contextMenus`, `storage`, and host access to `https://grateful-caterpillar-393.convex.site/*`. It injects no content script and does not request browser-history or all-sites read access. Pairing codes and access tokens are stored only as SHA-256 hashes in Convex; the one returned access token is kept in extension-local storage restricted to trusted extension contexts. Generating a new pairing token replaces the previous extension token, and the connection can be revoked immediately from `/extension`.
+
+Validate the unpacked extension source with:
+
+```bash
+pnpm check:extension
+```
+
+If the production Convex deployment name changes, update both `host_permissions` in `extension/manifest.json` and `apiBase` in `extension/api.mjs` before reloading the extension.
+
 ## First account
 
 Choose **Create account** on the login screen and register with the email configured as `APP_OWNER_EMAIL` and a password of at least eight characters. That account becomes the only owner of this personal notebook. Existing words are assigned to it automatically in batches.
@@ -89,6 +110,7 @@ Later accounts may authenticate but cannot read, edit, delete, review, or create
 ```bash
 pnpm typecheck
 pnpm lint
+pnpm check:extension
 pnpm build
 ```
 
@@ -124,6 +146,7 @@ Generated pronunciation is stored as IPA for English, French, and Spanish, and a
 
 - Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
 - All vocabulary queries, mutations, review updates, and Gemini actions require the authenticated app owner; duplicates are scoped to that owner.
+- Extension requests authenticate with a single revocable token minted from an owner-only, one-time pairing code; raw pairing codes and tokens are never stored in Convex.
 - Refreshing a duplicate updates generated vocabulary content while retaining review progress and its original month.
 - The home timeline follows the active lookup language; review sessions can independently select a language and collection-time range.
 - Gemini output is constrained by a JSON schema and validated again with Zod before any write.

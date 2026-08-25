@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Voce</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="brand">
+        <div class="mark" aria-hidden="true">
+          <span></span><span></span>
+        </div>
+        <div>
+          <p class="wordmark">Voce</p>
+          <p class="eyebrow">Personal lexicon</p>
+        </div>
+        <span id="connection-dot" class="connection-dot" aria-hidden="true"></span>
+      </header>
+
+      <section id="pairing-view" hidden aria-labelledby="pairing-title">
+        <p class="kicker">Private connection</p>
+        <h1 id="pairing-title">Bring Voce into Chrome.</h1>
+        <p class="lede">Generate a one-time code from your Voce account, then enter it here.</p>
+        <form id="pairing-form">
+          <label for="pairing-code">Pairing code</label>
+          <input id="pairing-code" name="code" type="text" inputmode="text" autocomplete="off" spellcheck="false" maxlength="20" placeholder="VOCE-•••••-•••••" required />
+          <p id="pairing-error" class="message error" role="alert"></p>
+          <button id="pairing-submit" class="primary" type="submit">Connect to Voce <span aria-hidden="true">↗</span></button>
+        </form>
+        <a class="text-link" href="https://voce-fawn.vercel.app/extension" target="_blank" rel="noreferrer">Open pairing page <span aria-hidden="true">↗</span></a>
+      </section>
+
+      <section id="lookup-view" hidden aria-labelledby="lookup-title">
+        <p class="kicker">Words worth keeping</p>
+        <h1 id="lookup-title">Add to your lexicon.</h1>
+        <form id="lookup-form">
+          <fieldset>
+            <legend>Vocabulary language</legend>
+            <div id="language-options" class="languages" role="group" aria-label="Vocabulary language"></div>
+          </fieldset>
+          <label for="word-input">Word or short phrase</label>
+          <div class="input-row">
+            <input id="word-input" name="word" type="text" autocomplete="off" spellcheck="false" maxlength="80" placeholder="Enter a word…" required />
+            <button id="lookup-submit" class="arrow-button" type="submit" aria-label="Look up and save"><span aria-hidden="true">↗</span></button>
+          </div>
+          <p id="lookup-message" class="message" role="status"></p>
+        </form>
+        <div class="rule"></div>
+        <p class="hint">Tip · select text on any page, then right-click “Add to Voce”. Japanese text is detected automatically.</p>
+        <a class="text-link" href="https://voce-fawn.vercel.app/extension" target="_blank" rel="noreferrer">Manage connection <span aria-hidden="true">↗</span></a>
+      </section>
+    </main>
+    <script type="module" src="popup.mjs"></script>
+  </body>
+</html>

@@ -29,6 +29,15 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_userId", ["userId"]),
+  extensionAccess: defineTable({
+    key: v.literal("primary"),
+    ownerId: v.id("users"),
+    pairingCodeHash: v.union(v.string(), v.null()),
+    pairingExpiresAt: v.union(v.number(), v.null()),
+    tokenHash: v.union(v.string(), v.null()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
   words: defineTable({
     ownerId: v.optional(v.id("users")),
     inputWord: v.string(),
