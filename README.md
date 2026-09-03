@@ -14,6 +14,7 @@ Production: https://voce-fawn.vercel.app
 - Gemini `gemini-3.5-flash-lite` through the official `@google/genai` SDK
 - Tailwind CSS v4 and accessible Radix/shadcn-style primitives
 - Zod validation, Lucide icons, Sonner notifications
+- Installable PWA shell with route and static-asset caching
 
 ## Prerequisites
 
@@ -77,6 +78,18 @@ pnpm dev:convex
 ```
 
 Open `http://localhost:3000`. The lookup month is generated in the browser's local timezone before the request is sent.
+
+## Progressive Web App
+
+Production builds register `/sw.js` and expose `/manifest.webmanifest`, so Voce can be installed from a supporting browser. Visited pages and their same-origin static assets are cached for later offline reopening; an uncached route falls back to the standalone offline screen.
+
+Convex responses and authentication data are deliberately not written to the service-worker cache. Existing screens can remain visible during a temporary disconnect, but signing in, syncing vocabulary, Gemini lookups, and mutations require a network connection. The in-app connection banner disappears automatically after reconnecting.
+
+Service workers require HTTPS in production. Localhost is treated as a secure origin, but registration is disabled under `pnpm dev` to prevent stale development bundles; use `pnpm build` followed by `pnpm start` for local PWA testing. Regenerate install icons after changing the brand mark with:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\generate-pwa-icons.ps1
+```
 
 ## Chrome extension
 

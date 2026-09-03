@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1c1c1a" />
+    <title>Offline · Voce</title>
+    <style>
+      :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, sans-serif; background: #fbfbfa; color: #1c1c1a; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; min-height: 100dvh; margin: 0; display: grid; place-items: center; padding: 24px; }
+      main { width: min(100%, 560px); border-block: 1px solid #eae9e6; padding: 56px 0; text-align: center; }
+      img { width: 48px; height: 48px; border-radius: 11px; }
+      .eyebrow { margin: 24px 0 0; font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #777670; }
+      h1 { margin: 12px 0 0; font-family: Georgia, serif; font-size: clamp(42px, 10vw, 64px); font-weight: 400; letter-spacing: -.045em; line-height: .95; }
+      p { margin: 20px auto 0; max-width: 42ch; color: #777670; font-size: 14px; line-height: 1.7; }
+      button { margin-top: 32px; min-height: 44px; border: 1px solid #1c1c1a; padding: 0 22px; background: #1c1c1a; color: #fbfbfa; font: inherit; cursor: pointer; }
+      button:focus-visible { outline: 2px solid #557568; outline-offset: 3px; }
+      @media (prefers-color-scheme: dark) {
+        :root { background: #121212; color: #ededeb; }
+        main { border-color: #262626; }
+        .eyebrow, p { color: #9a9a95; }
+        button { border-color: #ededeb; background: #ededeb; color: #121212; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/pwa-icon-192.png" alt="" width="48" height="48" />
+      <p class="eyebrow">No connection</p>
+      <h1>Your words are waiting.</h1>
+      <p>Voce needs a connection to sign in, sync your lexicon, and look up new words. Reconnect, then try again.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

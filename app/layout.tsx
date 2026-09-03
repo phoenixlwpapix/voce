@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Manrope, Newsreader, Noto_Sans, Noto_Sans_JP } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { PwaClient } from "@/components/pwa-client";
 import "./globals.css";
 
 const serif = Newsreader({ subsets: ["latin"], variable: "--font-newsreader", display: "swap" });
@@ -12,6 +13,22 @@ const japanese = Noto_Sans_JP({ variable: "--font-noto-sans-jp", weight: ["400",
 export const metadata: Metadata = {
   title: { default: "Voce — Personal Lexicon", template: "%s · Voce" },
   description: "A quiet multilingual vocabulary notebook for English, French, Spanish and Japanese.",
+  applicationName: "Voce",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Voce",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1c1c1a" },
+    { media: "(prefers-color-scheme: dark)", color: "#121212" },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -19,6 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" suppressHydrationWarning>
       <body className={`${serif.variable} ${sans.variable} ${mono.variable} ${ipa.variable} ${japanese.variable} antialiased`}>
         <Providers>{children}</Providers>
+        <PwaClient />
       </body>
     </html>
   );
