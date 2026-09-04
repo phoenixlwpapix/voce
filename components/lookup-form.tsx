@@ -59,8 +59,8 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
         monthGroup: getLocalMonthGroup(),
       });
       setValue("");
-      toast.success(result.status === "created" ? `Added ${result.word}` : `Refreshed ${result.word}`, {
-        description: result.status === "created" ? "Added to this month's collection." : "Your review progress was preserved.",
+      toast.success(result.status === "created" ? `Added ${result.word}` : `${result.word} is already saved`, {
+        description: result.status === "created" ? "Added to this month's collection." : "The existing entry was left unchanged.",
       });
     } catch (caughtError) {
       setError(getUserErrorMessage(caughtError));
@@ -71,62 +71,64 @@ export function LookupForm({ language, onLanguageChange }: LookupFormProps) {
   }
 
   return (
-    <section className="mx-auto w-full max-w-2xl px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20" aria-labelledby="lookup-title">
-      <div className="mb-9 text-center">
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Words worth keeping</p>
-        <h1 id="lookup-title" className="font-serif text-[clamp(2.35rem,8vw,5.25rem)] font-normal leading-[0.95] tracking-[-0.055em]">
-          What will you<br />remember today?
-        </h1>
+    <section className="mx-auto w-full max-w-5xl px-5 pb-9 pt-7 sm:px-8 sm:pb-11 sm:pt-9 lg:pb-12 lg:pt-10" aria-labelledby="lookup-title">
+      <div className="grid gap-7 border-b border-border/70 pb-8 sm:pb-9 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(26rem,1.2fr)] lg:items-end lg:gap-16">
+        <div>
+          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Words worth keeping</p>
+          <h1 id="lookup-title" className="max-w-xl font-serif text-[clamp(2.35rem,6vw,4.25rem)] font-normal leading-[0.94] tracking-[-0.055em]">
+            What will you<br />remember today?
+          </h1>
+        </div>
+
+        <form onSubmit={handleSubmit} noValidate className="self-end">
+          <fieldset className="mb-3 flex gap-1" disabled={submitting}>
+            <legend className="sr-only">Choose vocabulary language</legend>
+            {languages.map((item) => (
+              <button
+                key={item}
+                type="button"
+                data-active={language === item}
+                onClick={() => onLanguageChange(item)}
+                className={cn(
+                  "min-h-9 border-b border-transparent px-3 font-mono text-[11px] tracking-[0.16em] text-muted-foreground outline-none transition-colors first:pl-0 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:text-foreground motion-reduce:transition-none sm:px-4",
+                  languagePillClasses[item],
+                )}
+                aria-pressed={language === item}
+                aria-label={languageNames[item]}
+              >
+                {item}
+              </button>
+            ))}
+          </fieldset>
+
+          <div className="relative flex items-center gap-4 border-y border-border/70 py-1.5 transition-colors focus-within:border-foreground motion-reduce:transition-none">
+            <label htmlFor="word-input" className="sr-only">Enter a word in {languageNames[language]}</label>
+            <Input
+              id="word-input"
+              value={value}
+              onChange={(event) => {
+                setValue(event.target.value);
+                if (error) setError(null);
+              }}
+              placeholder={lookupPlaceholderByLanguage[language]}
+              lang={localeByLanguage[language]}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={maxWordLength + 1}
+              aria-describedby={error ? "lookup-error" : undefined}
+              aria-invalid={Boolean(error)}
+              disabled={submitting}
+              className="border-b-0 font-serif text-xl focus:border-transparent sm:text-2xl"
+            />
+            <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting} aria-label={submitting ? "Looking up" : "Look up and save"}>
+              {submitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUpRight className="size-4" aria-hidden="true" />}
+            </Button>
+          </div>
+          <div className="mt-2 min-h-5 text-left text-xs">
+            {error ? <p id="lookup-error" role="alert" className="text-destructive">{error}</p> : null}
+          </div>
+        </form>
       </div>
-
-      <form onSubmit={handleSubmit} noValidate>
-        <fieldset className="mb-4 flex justify-center gap-2" disabled={submitting}>
-          <legend className="sr-only">Choose vocabulary language</legend>
-          {languages.map((item) => (
-            <button
-              key={item}
-              type="button"
-              data-active={language === item}
-              onClick={() => onLanguageChange(item)}
-              className={cn(
-                "min-h-10 border-b border-transparent px-4 font-mono text-[11px] tracking-[0.16em] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:text-foreground motion-reduce:transition-none",
-                languagePillClasses[item],
-              )}
-              aria-pressed={language === item}
-              aria-label={languageNames[item]}
-            >
-              {item}
-            </button>
-          ))}
-        </fieldset>
-
-        <div className="relative flex items-center gap-4 border-y border-border/70 py-1.5 transition-colors focus-within:border-foreground motion-reduce:transition-none">
-          <label htmlFor="word-input" className="sr-only">Enter a word in {languageNames[language]}</label>
-          <Input
-            id="word-input"
-            value={value}
-            onChange={(event) => {
-              setValue(event.target.value);
-              if (error) setError(null);
-            }}
-            placeholder={lookupPlaceholderByLanguage[language]}
-            lang={localeByLanguage[language]}
-            autoComplete="off"
-            spellCheck={false}
-            maxLength={maxWordLength + 1}
-            aria-describedby={error ? "lookup-error" : undefined}
-            aria-invalid={Boolean(error)}
-            disabled={submitting}
-            className="border-b-0 font-serif text-xl focus:border-transparent sm:text-2xl"
-          />
-          <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting} aria-label={submitting ? "Looking up" : "Look up and save"}>
-            {submitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUpRight className="size-4" aria-hidden="true" />}
-          </Button>
-        </div>
-        <div className="mt-3 min-h-5 text-center text-xs">
-          {error ? <p id="lookup-error" role="alert" className="text-destructive">{error}</p> : null}
-        </div>
-      </form>
     </section>
   );
 }

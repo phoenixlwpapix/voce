@@ -2,7 +2,7 @@
 
 Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, a deterministic two-button scheduler powers review, and a private Chrome companion saves words from any page.
 
-The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
+The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view uses a compact editorial workspace masthead that keeps the lookup controls prominent while bringing the latest vocabulary into the initial desktop viewport. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
 Production: https://voce-fawn.vercel.app
 
@@ -153,14 +153,14 @@ Opening `/review` first shows a setup screen. Choose one language (`EN`, `FR`, `
 
 Shortcuts are ignored while an input, textarea, select, or editable element is focused. Pronunciation uses the browser Web Speech API with exact-locale, language-prefix, then default-voice fallback.
 
-Generated pronunciation is stored as IPA for English, French, and Spanish, and as a Hiragana reading for Japanese. Japanese word forms use a dedicated Japanese font and language-aware line height to avoid glyph clipping at display sizes.
+Generated pronunciation is stored as IPA for English, French, and Spanish, and as a Hiragana reading for Japanese. Language-specific generation guidance also checks agreement inside examples, including Spanish and French reflexive or pronominal verbs used after a conjugated modal or another verb. Japanese word forms use a dedicated Japanese font and language-aware line height to avoid glyph clipping at display sizes.
 
 ## Data behavior
 
 - Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
 - All vocabulary queries, mutations, review updates, and Gemini actions require the authenticated app owner; duplicates are scoped to that owner.
 - Extension requests authenticate with a single revocable token minted from an owner-only, one-time pairing code; raw pairing codes and tokens are never stored in Convex.
-- Refreshing a duplicate updates generated vocabulary content while retaining review progress and its original month.
+- Duplicate lookups return the existing entry before calling Gemini, leaving its generated content, review progress, and original month unchanged.
 - The home timeline follows the active lookup language; review sessions can independently select a language and collection-time range.
 - Gemini output is constrained by a JSON schema and validated again with Zod before any write.
 - Review interval calculations run inside the Convex mutation.

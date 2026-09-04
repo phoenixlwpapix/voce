@@ -1,7 +1,32 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { languageValidator, lookupResultValidator } from "./validators";
 import { v } from "convex/values";
 import { normalizePhonetic } from "../lib/phonetics";
+
+export const findExistingWord = internalQuery({
+  args: {
+    ownerId: v.id("users"),
+    language: languageValidator,
+    normalizedWord: v.string(),
+  },
+  returns: v.union(
+    v.object({ id: v.id("words"), word: v.string() }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("words")
+      .withIndex("by_ownerId_language_normalizedWord", (query) =>
+        query
+          .eq("ownerId", args.ownerId)
+          .eq("language", args.language)
+          .eq("normalizedWord", args.normalizedWord),
+      )
+      .unique();
+
+    return existing === null ? null : { id: existing._id, word: existing.word };
+  },
+});
 
 export const upsertLookupResult = internalMutation({
   args: {
@@ -14,7 +39,7 @@ export const upsertLookupResult = internalMutation({
   },
   returns: v.object({
     id: v.id("words"),
-    status: v.union(v.literal("created"), v.literal("refreshed")),
+    status: v.union(v.literal("created"), v.literal("existing")),
     word: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -32,17 +57,7 @@ export const upsertLookupResult = internalMutation({
     const now = Date.now();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        inputWord: args.inputWord,
-        word: args.result.word,
-        phonetic,
-        definitions: args.result.definitions,
-        grammar: args.result.grammar,
-        examples: args.result.examples,
-        updatedAt: now,
-      });
-
-      return { id: existing._id, status: "refreshed" as const, word: args.result.word };
+      return { id: existing._id, status: "existing" as const, word: existing.word };
     }
 
     const id = await ctx.db.insert("words", {

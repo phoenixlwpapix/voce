@@ -95,9 +95,19 @@ const languageInstruction: Record<Language, string> = {
   JA: "Japanese",
 };
 
+const baseLexicographerInstruction =
+  "You are a precise multilingual lexicographer for Chinese learners. Return the canonical word, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. In the phonetic field, return Hiragana only for Japanese vocabulary; for every other language return IPA only. Never add slashes, brackets, pitch-accent numbers, or explanatory prose to the phonetic field. For relevant French or Spanish nouns include gender. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, put the infinitive or Japanese dictionary form in the infinitive field. For Japanese vocabulary, use the grammar note for a concise usage note when helpful. Omit irrelevant grammar fields. Before returning, check that every example is grammatically correct and that its subject, finite verbs, pronouns, and possessives agree. Never use Markdown.";
+
+const languageSpecificInstruction: Record<Language, string> = {
+  EN: "Write idiomatic English examples with consistent person, number, and tense.",
+  FR: "For French pronominal verbs, never copy the dictionary-form pronoun se into an example mechanically. Inflect the reflexive pronoun to agree with the example's subject: me/m', te/t', se/s', nous, vous, or se/s'. This agreement must also hold when the pronominal infinitive follows a conjugated modal or another verb: write \"Tu dois te brosser les dents\", never \"Tu dois se brosser les dents\". Check the subject, conjugated verb, and reflexive pronoun together before returning each example.",
+  ES: "For Spanish pronominal or reflexive verbs ending in -se, never copy the dictionary-form clitic se into an example mechanically. Inflect the clitic to agree with the example's subject: me, te, se, nos, os, or se. When a pronominal infinitive follows a conjugated modal or another verb, either attach the agreeing clitic to the infinitive or place it before the conjugated verb: write \"Debes cepillarte los dientes\" or \"Te debes cepillar los dientes\", never \"Debes cepillarse los dientes\". Check the subject, conjugated verb, and reflexive clitic together before returning each example.",
+  JA: "Write natural Japanese examples with internally consistent politeness, particles, and inflection.",
+};
+
 export type LookupActionResult = {
   id: Id<"words">;
-  status: "created" | "refreshed";
+  status: "created" | "existing";
   word: string;
 };
 
@@ -134,6 +144,19 @@ export async function lookupAndSaveForOwner(
     throw new ConvexError("Invalid month format. Refresh the page and try again.");
   }
 
+  const normalizedWord = normalizeWord(inputWord, args.language);
+  const existing: { id: Id<"words">; word: string } | null = await ctx.runQuery(
+    internal.internalWords.findExistingWord,
+    {
+      ownerId: args.ownerId,
+      language: args.language,
+      normalizedWord,
+    },
+  );
+  if (existing !== null) {
+    return { ...existing, status: "existing" };
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new ConvexError("The lookup service isn't configured. Contact the maintainer.");
@@ -145,8 +168,7 @@ export async function lookupAndSaveForOwner(
       model: "gemini-3.5-flash-lite",
       contents: `Look up the ${languageInstruction[args.language]} vocabulary item: ${JSON.stringify(inputWord)}.`,
       config: {
-        systemInstruction:
-          "You are a precise multilingual lexicographer for Chinese learners. Return the canonical word, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. In the phonetic field, return Hiragana only for Japanese vocabulary; for every other language return IPA only. Never add slashes, brackets, pitch-accent numbers, or explanatory prose to the phonetic field. For relevant French or Spanish nouns include gender. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, put the infinitive or Japanese dictionary form in the infinitive field. For Japanese vocabulary, use the grammar note for a concise usage note when helpful. Omit irrelevant grammar fields. Never use Markdown.",
+        systemInstruction: `${baseLexicographerInstruction} ${languageSpecificInstruction[args.language]}`,
         temperature: 0.2,
         responseMimeType: "application/json",
         responseJsonSchema,
@@ -167,7 +189,7 @@ export async function lookupAndSaveForOwner(
     return await ctx.runMutation(internal.internalWords.upsertLookupResult, {
       ownerId: args.ownerId,
       inputWord,
-      normalizedWord: normalizeWord(inputWord, args.language),
+      normalizedWord,
       language: args.language,
       monthGroup: args.monthGroup,
       result,

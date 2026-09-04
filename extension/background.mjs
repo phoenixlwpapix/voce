@@ -44,8 +44,10 @@ async function addSelection(selectionText) {
   await setBadge("…", `Adding ${word} to Voce`);
   try {
     const result = await lookupWord(word, language);
-    const verb = result.status === "created" ? "Added" : "Refreshed";
-    await setBadge("✓", `${verb} ${result.word} · ${language}`);
+    const message = result.status === "created"
+      ? `Added ${result.word}`
+      : `${result.word} is already saved`;
+    await setBadge("✓", `${message} · ${language}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The lookup failed.";
     await setBadge("!", message, "#a33f35");

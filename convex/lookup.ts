@@ -16,7 +16,7 @@ export const lookupAndSave = action({
   },
   returns: v.object({
     id: v.id("words"),
-    status: v.union(v.literal("created"), v.literal("refreshed")),
+    status: v.union(v.literal("created"), v.literal("existing")),
     word: v.string(),
   }),
   handler: async (ctx, args) => {

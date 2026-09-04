@@ -84,7 +84,7 @@ export const lookupFromExtension = internalAction({
       ok: v.literal(true),
       result: v.object({
         id: v.id("words"),
-        status: v.union(v.literal("created"), v.literal("refreshed")),
+        status: v.union(v.literal("created"), v.literal("existing")),
         word: v.string(),
       }),
     }),
@@ -94,7 +94,7 @@ export const lookupFromExtension = internalAction({
     ctx,
     args,
   ): Promise<
-    | { ok: true; result: { id: Id<"words">; status: "created" | "refreshed"; word: string } }
+    | { ok: true; result: { id: Id<"words">; status: "created" | "existing"; word: string } }
     | { ok: false }
   > => {
     if (!tokenPattern.test(args.token)) return { ok: false as const };

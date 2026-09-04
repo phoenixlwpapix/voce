@@ -98,8 +98,10 @@ lookupForm.addEventListener("submit", (event) => {
   setMessage(lookupMessage, "Looking up and saving…");
   void lookupWord(word, selectedLanguage)
     .then((result) => {
-      const verb = result.status === "created" ? "Added" : "Refreshed";
-      setMessage(lookupMessage, `${verb} ${result.word}`);
+      const message = result.status === "created"
+        ? `Added ${result.word}`
+        : `${result.word} is already saved`;
+      setMessage(lookupMessage, message);
       wordInput.value = "";
       wordInput.focus();
     })
