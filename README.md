@@ -161,6 +161,6 @@ Generated pronunciation is stored as IPA for English, French, and Spanish, and a
 - All vocabulary queries, mutations, review updates, and Gemini actions require the authenticated app owner; duplicates are scoped to that owner.
 - Extension requests authenticate with a single revocable token minted from an owner-only, one-time pairing code; raw pairing codes and tokens are never stored in Convex.
 - Duplicate lookups return the existing entry before calling Gemini, leaving its generated content, review progress, and original month unchanged.
-- The home timeline follows the active lookup language; review sessions can independently select a language and collection-time range.
+- The home timeline follows the active lookup language and can instantly search saved entries by word, pronunciation, infinitive, grammar note, part of speech, or Chinese definition; review sessions can independently select a language and collection-time range.
 - Gemini output is constrained by a JSON schema and validated again with Zod before any write.
 - Review interval calculations run inside the Convex mutation.

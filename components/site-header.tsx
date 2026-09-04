@@ -21,15 +21,14 @@ export function SiteHeader({ reviewLanguage }: { reviewLanguage?: Language }) {
       </Link>
       <nav className="flex items-center gap-1" aria-label="Main navigation">
         <Button asChild variant="ghost" size="default" className="px-3 text-xs">
-          <Link href="/extension">
-            <Puzzle className="size-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Extension</span>
-          </Link>
-        </Button>
-        <Button asChild variant="ghost" size="default" className="px-3 text-xs">
           <Link href={reviewLanguage ? `/review?language=${reviewLanguage}` : "/review"}>
             <BookOpenText className="size-4" aria-hidden="true" />
             <span>Review</span>
+          </Link>
+        </Button>
+        <Button asChild variant="ghost" size="icon">
+          <Link href="/extension" aria-label="Extension setup" title="Extension setup">
+            <Puzzle className="size-4" aria-hidden="true" />
           </Link>
         </Button>
         <ThemeToggle />

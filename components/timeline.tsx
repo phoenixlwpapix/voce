@@ -1,12 +1,14 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { BookDashed, CalendarDays, LoaderCircle } from "lucide-react";
-import { useMemo, useState } from "react";
+import { BookDashed, CalendarDays, LoaderCircle, Search, X } from "lucide-react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { WordRow } from "@/components/word-row";
 import { useSpeech } from "@/hooks/use-speech";
+import { languageNames, localeByLanguage } from "@/lib/constants";
 import { formatMonthGroup } from "@/lib/month";
 import type { Language, WordDocument } from "@/lib/types";
 
@@ -24,21 +26,48 @@ function groupWords(words: WordDocument[]) {
   );
 }
 
+function matchesSearch(word: WordDocument, query: string, language: Language) {
+  const normalizedQuery = query.trim().normalize("NFC").toLocaleLowerCase(localeByLanguage[language]);
+  if (!normalizedQuery) return true;
+
+  const searchableValues = [
+    word.word,
+    word.inputWord,
+    word.phonetic,
+    word.grammar?.infinitive,
+    word.grammar?.noteZh,
+    ...word.definitions.flatMap((definition) => [definition.partOfSpeech, definition.meaningZh]),
+  ];
+  return searchableValues.some((value) =>
+    value?.normalize("NFC").toLocaleLowerCase(localeByLanguage[language]).includes(normalizedQuery),
+  );
+}
+
 export function Timeline({ language }: { language: Language }) {
   const words = useQuery(api.words.getWordsByMonth, {});
   const { available: speechAvailable, speak } = useSpeech();
   const [filterMonth, setFilterMonth] = useState("");
-  const { languageWords, sections } = useMemo<{
+  const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const { languageWords, visibleWordCount, sections } = useMemo<{
     languageWords: WordDocument[];
+    visibleWordCount: number;
     sections: MonthSection[];
   }>(() => {
-    if (!words) return { languageWords: [], sections: [] };
+    if (!words) return { languageWords: [], visibleWordCount: 0, sections: [] };
     const matchingLanguage = words.filter((word) => word.language === language);
+    const matchingSearch = matchingLanguage.filter((word) =>
+      matchesSearch(word, deferredSearchQuery, language),
+    );
     const visibleWords = filterMonth
-      ? matchingLanguage.filter((word) => word.monthGroup === filterMonth)
-      : matchingLanguage;
-    return { languageWords: matchingLanguage, sections: groupWords(visibleWords) };
-  }, [filterMonth, language, words]);
+      ? matchingSearch.filter((word) => word.monthGroup === filterMonth)
+      : matchingSearch;
+    return {
+      languageWords: matchingLanguage,
+      visibleWordCount: visibleWords.length,
+      sections: groupWords(visibleWords),
+    };
+  }, [deferredSearchQuery, filterMonth, language, words]);
   if (words === undefined) {
     return (
       <section className="mx-auto min-h-72 max-w-5xl px-5 py-20 text-center sm:px-8" aria-busy="true">
@@ -52,21 +81,51 @@ export function Timeline({ language }: { language: Language }) {
     <section className="mx-auto w-full max-w-5xl px-5 pb-24 sm:px-8 sm:pb-32" aria-labelledby="timeline-title">
       <div className="mb-7 flex flex-wrap items-end justify-between gap-5 border-b border-border pb-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Archive · {language} · {languageWords.length} words</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Archive · {language} · {searchQuery.trim() || filterMonth ? `${visibleWordCount} of ` : ""}{languageWords.length} words
+          </p>
           <h2 id="timeline-title" className="mt-2 font-serif text-3xl tracking-[-0.03em]">Vocabulary timeline</h2>
         </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="month-filter" className="sr-only">Filter by month</label>
-          <CalendarDays className="size-4 text-muted-foreground" aria-hidden="true" />
-          <input
-            id="month-filter"
-            type="month"
-            lang="en-US"
-            value={filterMonth}
-            onChange={(event) => setFilterMonth(event.target.value)}
-            className="h-10 border-0 border-b border-border bg-transparent px-1 font-mono text-xs text-foreground outline-none focus:border-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          />
-          {filterMonth ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>All</Button> : null}
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-56">
+            <Search className="pointer-events-none absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <label htmlFor="saved-word-search" className="sr-only">Search saved {languageNames[language]} words</label>
+            <Input
+              id="saved-word-search"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={`Search saved ${language} words`}
+              maxLength={80}
+              autoComplete="off"
+              className="h-10 pl-7 pr-8 font-mono text-xs [&::-webkit-search-cancel-button]:appearance-none"
+            />
+            {searchQuery ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-1/2 size-8 min-h-8 -translate-y-1/2 text-muted-foreground"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear saved word search"
+              >
+                <X className="size-3.5" aria-hidden="true" />
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="month-filter" className="sr-only">Filter by month</label>
+            <CalendarDays className="size-4 text-muted-foreground" aria-hidden="true" />
+            <input
+              id="month-filter"
+              type="month"
+              lang="en-US"
+              value={filterMonth}
+              onChange={(event) => setFilterMonth(event.target.value)}
+              className="h-10 min-w-0 flex-1 border-0 border-b border-border bg-transparent px-1 font-mono text-xs text-foreground outline-none focus:border-foreground focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
+            />
+            {filterMonth ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>All</Button> : null}
+          </div>
         </div>
       </div>
 
@@ -81,8 +140,17 @@ export function Timeline({ language }: { language: Language }) {
       ) : sections.length === 0 ? (
         <div className="grid min-h-64 place-items-center border-b border-border text-center">
           <div>
-            <p className="font-serif text-xl">No {language} words in {formatMonthGroup(filterMonth)}</p>
-            <Button type="button" variant="ghost" className="mt-3" onClick={() => setFilterMonth("")}>View all months</Button>
+            {deferredSearchQuery.trim() ? (
+              <>
+                <p className="font-serif text-xl">No saved {language} words match “{deferredSearchQuery.trim()}”</p>
+                <Button type="button" variant="ghost" className="mt-3" onClick={() => setSearchQuery("")}>Clear search</Button>
+              </>
+            ) : (
+              <>
+                <p className="font-serif text-xl">No {language} words in {formatMonthGroup(filterMonth)}</p>
+                <Button type="button" variant="ghost" className="mt-3" onClick={() => setFilterMonth("")}>View all months</Button>
+              </>
+            )}
           </div>
         </div>
       ) : (
