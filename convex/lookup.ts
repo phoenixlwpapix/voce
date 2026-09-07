@@ -6,7 +6,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action } from "./_generated/server";
 import { lookupAndSaveForOwner } from "./lookupCore";
-import { languageValidator } from "./validators";
+import { languageValidator, lookupActionResultValidator } from "./validators";
 
 export const lookupAndSave = action({
   args: {
@@ -14,11 +14,7 @@ export const lookupAndSave = action({
     language: languageValidator,
     monthGroup: v.string(),
   },
-  returns: v.object({
-    id: v.id("words"),
-    status: v.union(v.literal("created"), v.literal("existing")),
-    word: v.string(),
-  }),
+  returns: lookupActionResultValidator,
   handler: async (ctx, args) => {
     const ownerId = (await getAuthUserId(ctx)) as Id<"users"> | null;
     if (ownerId === null) {

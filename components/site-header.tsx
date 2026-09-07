@@ -1,17 +1,16 @@
 "use client";
 
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useQuery } from "convex/react";
+import { useContext } from "react";
+import { SignOutContext, useOwnerSession } from "@/hooks/use-owner-session";
 import Link from "next/link";
 import { BookOpenText, LogOut, Puzzle } from "lucide-react";
-import { api } from "@/convex/_generated/api";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import type { Language } from "@/lib/types";
 
 export function SiteHeader({ reviewLanguage }: { reviewLanguage?: Language }) {
-  const { signOut } = useAuthActions();
-  const account = useQuery(api.account.currentUser);
+  const signOut = useContext(SignOutContext);
+  const account = useOwnerSession();
 
   return (
     <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8 sm:py-7">
@@ -36,7 +35,7 @@ export function SiteHeader({ reviewLanguage }: { reviewLanguage?: Language }) {
           type="button"
           variant="ghost"
           size="icon"
-          onClick={() => void signOut()}
+          onClick={() => void signOut?.()}
           aria-label={account?.email ? `Sign out ${account.email}` : "Sign out"}
           title={account?.email ? `Sign out ${account.email}` : "Sign out"}
         >

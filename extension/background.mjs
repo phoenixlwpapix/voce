@@ -44,10 +44,17 @@ async function addSelection(selectionText) {
   await setBadge("…", `Adding ${word} to Voce`);
   try {
     const result = await lookupWord(word, language);
+    if (result.status === "needs_confirmation" || result.status === "invalid") {
+      const hint = result.status === "needs_confirmation"
+        ? `Did you mean ${result.suggestions.map((candidate) => candidate.word).join(" / ")}?`
+        : "Check the spelling.";
+      await setBadge("?", `Nothing saved. ${hint} Open the popup to look up the correct word.`, "#a33f35");
+      return;
+    }
     const message = result.status === "created"
       ? `Added ${result.word}`
       : `${result.word} is already saved`;
-    await setBadge("✓", `${message} · ${language}`);
+    await setBadge("✓", `${message} · ${result.language ?? language}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The lookup failed.";
     await setBadge("!", message, "#a33f35");

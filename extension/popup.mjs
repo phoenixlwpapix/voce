@@ -91,17 +91,46 @@ pairingForm.addEventListener("submit", (event) => {
     .finally(() => setBusy(pairingSubmit, false, ""));
 });
 
-lookupForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const word = wordInput.value;
+function submitLookup(word, requestedLanguage) {
+  if (lookupSubmit.disabled) return;
+  const languageAtStart = selectedLanguage;
   setBusy(lookupSubmit, true, "…");
   setMessage(lookupMessage, "Looking up and saving…");
-  void lookupWord(word, selectedLanguage)
+  void lookupWord(word, requestedLanguage)
     .then((result) => {
+      if (result.status === "invalid") {
+        setMessage(lookupMessage, "Couldn't verify this word. Check the spelling. Nothing was saved.", true);
+        return;
+      }
+      if (result.status === "needs_confirmation") {
+        setMessage(lookupMessage, `Nothing saved for “${result.inputWord}”. Did you mean:`);
+        for (const candidate of result.suggestions) {
+          const row = document.createElement("p");
+          row.textContent = `${candidate.word} · ${candidate.language} · ${candidate.meaningZh}`;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = `Save ${candidate.word}`;
+          button.addEventListener("click", () => submitLookup(candidate.word, candidate.language));
+          row.append(button);
+          lookupMessage.append(row);
+        }
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.textContent = "Back to editing";
+        edit.addEventListener("click", () => { setMessage(lookupMessage, ""); wordInput.focus(); });
+        lookupMessage.append(edit);
+        return;
+      }
       const message = result.status === "created"
         ? `Added ${result.word}`
         : `${result.word} is already saved`;
-      setMessage(lookupMessage, message);
+      const corrected = languages.includes(result.language) && result.language !== languageAtStart;
+      if (corrected && selectedLanguage === languageAtStart) {
+        selectedLanguage = result.language;
+        void setDefaultLanguage(result.language);
+        renderLanguages();
+      }
+      setMessage(lookupMessage, corrected ? `${message} · Detected ${languageNames[result.language]}` : message);
       wordInput.value = "";
       wordInput.focus();
     })
@@ -110,6 +139,11 @@ lookupForm.addEventListener("submit", (event) => {
       if (error && error.status === 401) setConnected(false);
     })
     .finally(() => setBusy(lookupSubmit, false, ""));
+}
+
+lookupForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitLookup(wordInput.value, selectedLanguage);
 });
 
 const extensionRuntimeAvailable = Boolean(globalThis.chrome?.storage?.local && globalThis.chrome?.action);

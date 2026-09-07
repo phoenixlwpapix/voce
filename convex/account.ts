@@ -41,8 +41,36 @@ export const claimOwnership = mutation({
       });
     }
 
-    await ctx.scheduler.runAfter(0, internal.account.claimLegacyWords, { userId });
+    if (!owner) {
+      await ctx.scheduler.runAfter(0, internal.account.claimLegacyWords, { userId });
+    }
     return null;
+  },
+});
+
+// The session subject scopes the client subscription across account changes.
+// It is compared with the authenticated identity, never trusted as authority.
+export const session = query({
+  args: { subject: v.string() },
+  returns: v.union(
+    v.object({ status: v.literal("denied") }),
+    v.object({ status: v.literal("setup") }),
+    v.object({ status: v.literal("ready"), userId: v.id("users"), email: v.union(v.string(), v.null()) }),
+  ),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    const userId = await getAuthUserId(ctx);
+    if (!userId || identity?.subject !== args.subject) return { status: "denied" as const };
+    const [user, owner] = await Promise.all([
+      ctx.db.get(userId),
+      ctx.db.query("appOwners").withIndex("by_key", (q) => q.eq("key", ownerKey)).unique(),
+    ]);
+    if (user?.email?.trim().toLowerCase() !== env.APP_OWNER_EMAIL.trim().toLowerCase()) {
+      return { status: "denied" as const };
+    }
+    if (!owner) return { status: "setup" as const };
+    if (owner.userId !== userId) return { status: "denied" as const };
+    return { status: "ready" as const, userId, email: user.email ?? null };
   },
 });
 

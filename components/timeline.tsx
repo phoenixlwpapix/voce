@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { BookDashed, CalendarDays, LoaderCircle, Search, X } from "lucide-react";
+import { useCachedLexicon } from "@/hooks/use-cached-lexicon";
+import { BookDashed, CalendarDays, Search, X } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
-import { api } from "@/convex/_generated/api";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WordRow } from "@/components/word-row";
@@ -44,7 +44,7 @@ function matchesSearch(word: WordDocument, query: string, language: Language) {
 }
 
 export function Timeline({ language }: { language: Language }) {
-  const words = useQuery(api.words.getWordsByMonth, {});
+  const { words } = useCachedLexicon();
   const { available: speechAvailable, speak } = useSpeech();
   const [filterMonth, setFilterMonth] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,15 +68,6 @@ export function Timeline({ language }: { language: Language }) {
       sections: groupWords(visibleWords),
     };
   }, [deferredSearchQuery, filterMonth, language, words]);
-  if (words === undefined) {
-    return (
-      <section className="mx-auto min-h-72 max-w-5xl px-5 py-20 text-center sm:px-8" aria-busy="true">
-        <LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" aria-hidden="true" />
-        <p className="mt-4 text-sm text-muted-foreground">Opening your lexicon…</p>
-      </section>
-    );
-  }
-
   return (
     <section className="mx-auto w-full max-w-5xl px-5 pb-24 sm:px-8 sm:pb-32" aria-labelledby="timeline-title">
       <div className="mb-7 flex flex-wrap items-end justify-between gap-5 border-b border-border pb-4">
@@ -129,7 +120,16 @@ export function Timeline({ language }: { language: Language }) {
         </div>
       </div>
 
-      {languageWords.length === 0 ? (
+      {words === undefined ? (
+        <div className="min-h-72 space-y-6 py-6" role="status" aria-label="Loading vocabulary" aria-busy="true">
+          {[0, 1, 2, 3].map((row) => (
+            <div key={row} className="animate-pulse border-b border-border pb-6 motion-reduce:animate-none" aria-hidden="true">
+              <div className="h-6 w-36 rounded bg-secondary" />
+              <div className="mt-3 h-3 w-2/3 rounded bg-secondary" />
+            </div>
+          ))}
+        </div>
+      ) : languageWords.length === 0 ? (
         <div className="grid min-h-72 place-items-center border-b border-border text-center">
           <div className="max-w-sm py-14">
             <BookDashed className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />

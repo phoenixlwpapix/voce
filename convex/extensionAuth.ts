@@ -6,8 +6,8 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalAction } from "./_generated/server";
-import { lookupAndSaveForOwner } from "./lookupCore";
-import { languageValidator } from "./validators";
+import { lookupAndSaveForOwner, type LookupActionResult } from "./lookupCore";
+import { languageValidator, lookupActionResultValidator } from "./validators";
 
 const pairingLifetimeMs = 10 * 60 * 1000;
 const pairingAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -82,11 +82,7 @@ export const lookupFromExtension = internalAction({
   returns: v.union(
     v.object({
       ok: v.literal(true),
-      result: v.object({
-        id: v.id("words"),
-        status: v.union(v.literal("created"), v.literal("existing")),
-        word: v.string(),
-      }),
+      result: lookupActionResultValidator,
     }),
     v.object({ ok: v.literal(false) }),
   ),
@@ -94,7 +90,7 @@ export const lookupFromExtension = internalAction({
     ctx,
     args,
   ): Promise<
-    | { ok: true; result: { id: Id<"words">; status: "created" | "existing"; word: string } }
+    | { ok: true; result: LookupActionResult }
     | { ok: false }
   > => {
     if (!tokenPattern.test(args.token)) return { ok: false as const };

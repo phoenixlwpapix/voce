@@ -155,7 +155,27 @@ Shortcuts are ignored while an input, textarea, select, or editable element is f
 
 Generated pronunciation is stored as IPA for English, French, and Spanish, and as a Hiragana reading for Japanese. Language-specific generation guidance also checks agreement inside examples, including Spanish and French reflexive or pronominal verbs used after a conjugated modal or another verb. Japanese word forms use a dedicated Japanese font and language-aware line height to avoid glyph clipping at display sizes.
 
+## Cache-first timeline
+
+After authentication, the home shell appears while a read-only session query verifies the owner. Only an unclaimed, allowlisted account runs `claimOwnership`; legacy migration is scheduled when the owner is first created, not on every visit. All existing `requireOwner` checks remain enforced. The header shares the verified session instead of fetching the account again.
+
+Once the server confirms the user, the timeline starts IndexedDB reading and its existing reactive Convex query in parallel. Cached words render while the live result is pending; live results (including an empty list) always win and update the cache automatically. Only the vocabulary region shows skeletons on a cache miss. The existing 500-word query limit also applies to this cache; it is not a backup of the entire database.
+
+IndexedDB database `voce-lexicon-cache`, store `lexicons`, uses a deployment-URL + user-ID key. Each record is `{ version: 1, userId, updatedAt, words: WordDocument[] }`. Runtime validation rejects corrupt records, unknown versions and mismatched word owners. Storage failures silently fall back to Convex. Sign-out immediately unmounts personal UI while retaining isolated cache records for the next verified sign-in. Session changes remount personal state; an unverified last-user ID never grants access to a cache.
+
+Offline reading works after identity confirmation. A fully offline cold start cannot safely confirm the current account, so it does not reveal cached words. There is no offline write queue, conflict resolution or TTL. Convex remains the sole cloud source of truth; the service worker still never caches auth or Convex responses.
+
+Development-only `[Voce Perf]` logs report auth/owner readiness, cache/query readiness (milliseconds from navigation via `performance.now()`), word counts and cache age. Compare cold and warm reloads on the same signed-in browser/network before considering server preload or SSR; no production timing claim is implied.
+
+Run `pnpm test` for IndexedDB isolation/corruption/failure tests and Convex initialization/authorization regressions. Also run `pnpm typecheck`, `pnpm lint` and `pnpm build`. For browser acceptance, verify a cold miss, warm cached render under network throttling, disconnect after authentication, sign-out/account switch, a live add/delete/review update, and blocked IndexedDB. Deploy the new Convex `account.session` query before deploying this frontend.
+
 ## Data behavior
+
+- Suspected misspellings are not saved. Gemini returns up to three correctly spelled candidates with language and a short Chinese meaning; the web dialog and extension popup let the user select one or return to editing. Selecting a candidate performs a fresh, authorized lookup, generates the correct entry and deduplicates it before saving. Valid inflections remain valid vocabulary; unrecognized input is rejected. A lexical change silently made by the model also requires confirmation, and explicit misspelling-form definitions are blocked. Right-click extension lookups report that nothing was saved and direct the user to the popup for correction.
+- Normal new words still need one generation request. Spelling confirmation may require a second request unless the chosen word already exists. The lookup API now returns `created`, `existing`, `needs_confirmation` or `invalid`; consumers must only treat the first two as saved results. Deploy updated backend and clients together. Existing historical entries remain unchanged, and language/spelling accuracy still depends on the model; mocked regression tests verify write gating rather than prove model accuracy.
+
+- New lookups check the input language within the same Gemini request. The selected language is preserved for valid words, loanwords and ambiguous shared spellings; a clearly mismatched input can be corrected to EN/FR/ES/JA. Generated content and destination-language deduplication use the returned language. The webpage switches its language tab and explains the correction; the extension popup also reflects it, and selection lookups display the saved language.
+- A matching existing entry in the selected language still returns without an AI call. Historical misclassified entries are not automatically reanalyzed or migrated. AI language decisions are not deterministic dictionary verification; tests mock generation to verify routing, validation and duplicate/progress preservation.
 
 - Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
 - All vocabulary queries, mutations, review updates, and Gemini actions require the authenticated app owner; duplicates are scoped to that owner.

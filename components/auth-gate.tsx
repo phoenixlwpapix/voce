@@ -1,10 +1,14 @@
 "use client";
 
-import { useAuthActions, useConvexAuth } from "@convex-dev/auth/react";
-import { useMutation } from "convex/react";
+import { useAuthActions, useAuthToken, useConvexAuth } from "@convex-dev/auth/react";
+import { useMutation, useQuery } from "convex/react";
 import { ArrowRight, KeyRound, LoaderCircle, LockKeyhole } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { decodeJwt } from "jose";
+import { usePathname } from "next/navigation";
+import { OwnerSessionContext, SignOutContext } from "@/hooks/use-owner-session";
+import { logPerf } from "@/lib/perf";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -211,60 +215,98 @@ function SignInScreen() {
   );
 }
 
-function OwnerGate({ children }: { children: React.ReactNode }) {
-  const { signOut } = useAuthActions();
+function AccountSetup() {
   const claimOwnership = useMutation(api.account.claimOwnership);
-  const [status, setStatus] = useState<"checking" | "ready" | "denied">("checking");
-
-  useEffect(() => {
-    let active = true;
-    void claimOwnership()
-      .then(() => {
-        if (active) setStatus("ready");
-      })
-      .catch(() => {
-        if (active) setStatus("denied");
-      });
-    return () => {
-      active = false;
-    };
-  }, [claimOwnership]);
-
-  if (status === "checking") {
-    return <LoadingScreen label="Opening your lexicon…" />;
+  const [error, setError] = useState(false);
+  const started = useRef(false);
+  async function initialize() {
+    setError(false);
+    try {
+      await claimOwnership();
+    } catch {
+      setError(true);
+    }
   }
+  useEffect(() => {
+    if (!started.current) {
+      started.current = true;
+      void initialize();
+    }
+    // Initialization runs only when the server reports an unclaimed account.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <main className="grid min-h-dvh place-items-center px-5 text-center">
+      <div>
+        <h1 className="font-serif text-3xl">Preparing your personal lexicon</h1>
+        {error ? <Button className="mt-6" onClick={() => void initialize()}>Retry setup</Button> : <p className="mt-4 text-sm text-muted-foreground">Assigning your account and existing words…</p>}
+      </div>
+    </main>
+  );
+}
 
-  if (status === "denied") {
+function SessionGate({ children, subject, signOut }: {
+  children: React.ReactNode;
+  subject: string;
+  signOut: () => Promise<void>;
+}) {
+  const session = useQuery(api.account.session, { subject });
+  const pathname = usePathname();
+  useEffect(() => {
+    if (session?.status === "ready") logPerf("owner ready");
+  }, [session?.status]);
+
+  if (session === undefined) {
+    return pathname === "/"
+      ? <OwnerSessionContext value={null}>{children}</OwnerSessionContext>
+      : <LoadingScreen label="Checking your account…" />;
+  }
+  if (session.status === "setup") return <AccountSetup />;
+  if (session.status === "denied") {
     return (
       <main className="grid min-h-dvh place-items-center px-5 text-center">
         <div className="max-w-md border-y border-border py-14">
           <LockKeyhole className="mx-auto size-5 text-muted-foreground" aria-hidden="true" />
-          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-            Access restricted
-          </p>
-          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">This lexicon already has an owner.</h1>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            This account can&apos;t access the vocabulary or use Gemini lookups.
-          </p>
-          <Button type="button" variant="outline" className="mt-8" onClick={() => void signOut()}>
-            Sign out
-          </Button>
+          <h1 className="mt-6 font-serif text-4xl">Access restricted</h1>
+          <p className="mt-4 text-sm text-muted-foreground">This account can&apos;t access this personal lexicon.</p>
+          <Button variant="outline" className="mt-8" onClick={() => void signOut()}>Sign out</Button>
         </div>
       </main>
     );
   }
-
-  return children;
+  return <OwnerSessionContext value={session}>{children}</OwnerSessionContext>;
 }
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
+  const { signOut } = useAuthActions();
+  const token = useAuthToken();
+  const [signingOut, setSigningOut] = useState(false);
+  let subject: string | undefined;
+  try {
+    // This only keys UI state. The server verifies the subject before allowing cache access.
+    subject = token ? decodeJwt(token).sub : undefined;
+  } catch {
+    subject = undefined;
+  }
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) logPerf("auth ready");
+  }, [isLoading, isAuthenticated]);
 
-  if (isLoading) {
-    return <LoadingScreen label="Checking your session…" />;
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setSigningOut(false);
+    }
   }
-  if (!isAuthenticated) {
-    return <SignInScreen />;
-  }
-  return <OwnerGate>{children}</OwnerGate>;
+  if (signingOut) return <LoadingScreen label="Signing out…" />;
+  if (isLoading) return <LoadingScreen label="Checking your session…" />;
+  if (!isAuthenticated || !subject) return <SignInScreen />;
+  return (
+    <SignOutContext value={handleSignOut}>
+      <SessionGate key={subject} subject={subject} signOut={handleSignOut}>{children}</SessionGate>
+    </SignOutContext>
+  );
 }
