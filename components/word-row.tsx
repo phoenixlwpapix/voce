@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { ChevronDown, Trash2, Volume2 } from "lucide-react";
+import { Trash2, Volume2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -49,48 +49,47 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
 
   return (
     <article className="border-b border-border content-auto">
-      <div className="grid grid-cols-[1fr_auto] gap-x-3 py-5 sm:grid-cols-[minmax(10rem,1.1fr)_5rem_minmax(8rem,0.9fr)_minmax(12rem,1.5fr)_auto] sm:items-center sm:gap-x-5 sm:py-6">
-        <div className="min-w-0">
-          <h3
-            lang={isJapanese ? "ja-JP" : undefined}
-            className={cn(
-              "truncate font-serif text-[1.65rem] leading-none tracking-[-0.025em]",
-              isJapanese && "font-ja py-[0.08em] leading-[1.2] tracking-normal",
-            )}
-          >
-            {word.word}
-          </h3>
-          <p className={cn("mt-2 truncate font-ipa text-[11px] text-muted-foreground sm:hidden", isJapanese && "font-ja")} lang={isJapanese ? "ja-JP" : undefined}>{formatPhonetic(word.phonetic, word.language)}</p>
-        </div>
-        <LanguageBadge language={word.language} className="hidden justify-self-start sm:inline-flex" />
-        <p className={cn("hidden truncate font-ipa text-xs text-muted-foreground sm:block", isJapanese && "font-ja")} lang={isJapanese ? "ja-JP" : undefined}>{formatPhonetic(word.phonetic, word.language)}</p>
-        <p lang="zh-CN" className="col-span-2 mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground sm:col-span-1 sm:mt-0 sm:line-clamp-1">
-          {word.definitions[0]?.meaningZh}
-          {word.definitions.length > 1 ? <span className="ml-1 font-mono text-[10px]">+{word.definitions.length - 1}</span> : null}
-        </p>
-        <div className="col-start-2 row-start-1 flex items-center justify-end gap-0 sm:col-start-5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => onSpeak(word.word, word.language)}
-            disabled={!speechAvailable}
-            aria-label={`Pronounce ${word.word}`}
-            title={speechAvailable ? "Play pronunciation" : "Speech is unavailable in this browser"}
-          >
-            <Volume2 className="size-4" aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => setExpanded((current) => !current)}
-            aria-expanded={expanded}
-            aria-controls={detailsId}
-            aria-label={expanded ? "Collapse word details" : "Expand word details"}
-          >
-            <ChevronDown className={cn("size-4 transition-transform motion-reduce:transition-none", expanded && "rotate-180")} aria-hidden="true" />
-          </Button>
+      <div className="relative cursor-pointer transition-colors hover:bg-muted/30">
+        <button
+          type="button"
+          className="absolute inset-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          aria-label={`${expanded ? "Collapse" : "Expand"} details for ${word.word}`}
+        />
+        <div className="pointer-events-none grid grid-cols-[1fr_2.5rem] gap-x-3 py-5 sm:grid-cols-[minmax(10rem,1.1fr)_5rem_minmax(8rem,0.9fr)_minmax(12rem,1.5fr)_2.5rem] sm:items-center sm:gap-x-5 sm:py-6">
+          <div className="min-w-0">
+            <h3
+              lang={isJapanese ? "ja-JP" : undefined}
+              className={cn(
+                "truncate font-serif text-[1.65rem] leading-none tracking-[-0.025em]",
+                isJapanese && "font-ja py-[0.08em] leading-[1.2] tracking-normal",
+              )}
+            >
+              {word.word}
+            </h3>
+            <p className={cn("mt-2 truncate font-ipa text-[11px] text-muted-foreground sm:hidden", isJapanese && "font-ja")} lang={isJapanese ? "ja-JP" : undefined}>{formatPhonetic(word.phonetic, word.language)}</p>
+          </div>
+          <LanguageBadge language={word.language} className="hidden justify-self-start sm:inline-flex" />
+          <p className={cn("hidden truncate font-ipa text-xs text-muted-foreground sm:block", isJapanese && "font-ja")} lang={isJapanese ? "ja-JP" : undefined}>{formatPhonetic(word.phonetic, word.language)}</p>
+          <p lang="zh-CN" className="col-span-2 mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground sm:col-span-1 sm:mt-0 sm:line-clamp-1">
+            {word.definitions[0]?.meaningZh}
+            {word.definitions.length > 1 ? <span className="ml-1 font-mono text-[10px]">+{word.definitions.length - 1}</span> : null}
+          </p>
+          <div className="pointer-events-auto relative z-10 col-start-2 row-start-1 flex items-center justify-end sm:col-start-5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => onSpeak(word.word, word.language)}
+              disabled={!speechAvailable}
+              aria-label={`Pronounce ${word.word}`}
+              title={speechAvailable ? "Play pronunciation" : "Speech is unavailable in this browser"}
+            >
+              <Volume2 className="size-4" aria-hidden="true" />
+            </Button>
+          </div>
         </div>
       </div>
 

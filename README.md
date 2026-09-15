@@ -2,7 +2,7 @@
 
 Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, a deterministic two-button scheduler powers review, and a private Chrome companion saves words from any page.
 
-The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view uses a compact editorial workspace masthead that keeps the lookup controls prominent while bringing the latest vocabulary into the initial desktop viewport. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
+The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view uses a compact editorial workspace masthead that keeps the lookup controls prominent while bringing the latest vocabulary into the initial desktop viewport. Each vocabulary row toggles its full learning details when clicked or activated from the keyboard, while its pronunciation control remains independent. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
 Production: https://voce-fawn.vercel.app
 
