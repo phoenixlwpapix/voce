@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { env, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { requireOwner } from "./ownership";
+import { languageValidator } from "./validators";
 
 const ownerKey = "primary" as const;
 const migrationBatchSize = 100;
@@ -39,6 +40,11 @@ export const claimOwnership = mutation({
         userId,
         createdAt: Date.now(),
       });
+      await ctx.db.insert("userPreferences", {
+        userId,
+        preferredLanguage: "EN",
+        updatedAt: Date.now(),
+      });
     }
 
     if (!owner) {
@@ -55,22 +61,59 @@ export const session = query({
   returns: v.union(
     v.object({ status: v.literal("denied") }),
     v.object({ status: v.literal("setup") }),
-    v.object({ status: v.literal("ready"), userId: v.id("users"), email: v.union(v.string(), v.null()) }),
+    v.object({
+      status: v.literal("ready"),
+      userId: v.id("users"),
+      email: v.union(v.string(), v.null()),
+      preferredLanguage: languageValidator,
+    }),
   ),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     const userId = await getAuthUserId(ctx);
     if (!userId || identity?.subject !== args.subject) return { status: "denied" as const };
-    const [user, owner] = await Promise.all([
+    const [user, owner, preferences] = await Promise.all([
       ctx.db.get(userId),
       ctx.db.query("appOwners").withIndex("by_key", (q) => q.eq("key", ownerKey)).unique(),
+      ctx.db.query("userPreferences").withIndex("by_userId", (q) => q.eq("userId", userId)).unique(),
     ]);
     if (user?.email?.trim().toLowerCase() !== env.APP_OWNER_EMAIL.trim().toLowerCase()) {
       return { status: "denied" as const };
     }
     if (!owner) return { status: "setup" as const };
     if (owner.userId !== userId) return { status: "denied" as const };
-    return { status: "ready" as const, userId, email: user.email ?? null };
+    return {
+      status: "ready" as const,
+      userId,
+      email: user.email ?? null,
+      preferredLanguage: preferences?.preferredLanguage ?? "EN",
+    };
+  },
+});
+
+export const setPreferredLanguage = mutation({
+  args: { language: languageValidator },
+  returns: languageValidator,
+  handler: async (ctx, args) => {
+    const userId = await requireOwner(ctx);
+    const preferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_userId", (index) => index.eq("userId", userId))
+      .unique();
+    const updatedAt = Date.now();
+    if (preferences) {
+      await ctx.db.patch(preferences._id, {
+        preferredLanguage: args.language,
+        updatedAt,
+      });
+    } else {
+      await ctx.db.insert("userPreferences", {
+        userId,
+        preferredLanguage: args.language,
+        updatedAt,
+      });
+    }
+    return args.language;
   },
 });
 
@@ -96,6 +139,18 @@ export const assertOwner = internalQuery({
       throw new ConvexError("This lexicon belongs to another account.");
     }
     return null;
+  },
+});
+
+export const getPreferredLanguageForOwner = internalQuery({
+  args: { userId: v.id("users") },
+  returns: languageValidator,
+  handler: async (ctx, args) => {
+    const preferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_userId", (index) => index.eq("userId", args.userId))
+      .unique();
+    return preferences?.preferredLanguage ?? "EN";
   },
 });
 

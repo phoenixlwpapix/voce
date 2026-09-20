@@ -29,6 +29,16 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_userId", ["userId"]),
+  userPreferences: defineTable({
+    userId: v.id("users"),
+    preferredLanguage: v.union(
+      v.literal("EN"),
+      v.literal("FR"),
+      v.literal("ES"),
+      v.literal("JA"),
+    ),
+    updatedAt: v.number(),
+  }).index("by_userId", ["userId"]),
   extensionAccess: defineTable({
     key: v.literal("primary"),
     ownerId: v.id("users"),
@@ -80,6 +90,9 @@ export default defineSchema({
     .index("by_ownerId_createdAt", ["ownerId", "createdAt"])
     .index("by_ownerId_monthGroup", ["ownerId", "monthGroup"])
     .index("by_ownerId_nextReviewAt", ["ownerId", "nextReviewAt"])
+    .index("by_ownerId_language_createdAt", ["ownerId", "language", "createdAt"])
+    .index("by_ownerId_language_monthGroup", ["ownerId", "language", "monthGroup"])
+    .index("by_ownerId_language_nextReviewAt", ["ownerId", "language", "nextReviewAt"])
     .index("by_ownerId_language_normalizedWord", [
       "ownerId",
       "language",

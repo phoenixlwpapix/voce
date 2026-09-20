@@ -21,6 +21,13 @@ export const lookupAndSave = action({
       throw new ConvexError("Please sign in to continue.");
     }
     await ctx.runQuery(internal.account.assertOwner, { userId: ownerId });
+    const preferredLanguage = await ctx.runQuery(
+      internal.account.getPreferredLanguageForOwner,
+      { userId: ownerId },
+    );
+    if (args.language !== preferredLanguage) {
+      throw new ConvexError("Your learning language changed. Refresh and try again.");
+    }
     return await lookupAndSaveForOwner(ctx, { ownerId, ...args });
   },
 });

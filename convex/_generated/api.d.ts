@@ -18,6 +18,7 @@ import type * as lookup from "../lookup.js";
 import type * as lookupCore from "../lookupCore.js";
 import type * as normalization from "../normalization.js";
 import type * as ownership from "../ownership.js";
+import type * as translation from "../translation.js";
 import type * as validators from "../validators.js";
 import type * as words from "../words.js";
 
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   lookupCore: typeof lookupCore;
   normalization: typeof normalization;
   ownership: typeof ownership;
+  translation: typeof translation;
   validators: typeof validators;
   words: typeof words;
 }>;

@@ -14,57 +14,62 @@ const word: WordDocument = {
 
 afterEach(async () => {
   vi.restoreAllMocks();
-  await clearCachedWords("A");
-  await clearCachedWords("B");
+  await clearCachedWords("A", "EN");
+  await clearCachedWords("A", "ES");
+  await clearCachedWords("B", "EN");
   vi.unstubAllEnvs();
 });
 
 test("a cache miss is distinct from an authoritative empty lexicon", async () => {
-  expect(await getCachedWords("A")).toBeNull();
-  await setCachedWords("A", []);
-  expect((await getCachedWords("A"))?.words).toEqual([]);
+  expect(await getCachedWords("A", "EN")).toBeNull();
+  await setCachedWords("A", "EN", []);
+  expect((await getCachedWords("A", "EN"))?.words).toEqual([]);
 });
 
-test("isolates users and persists live deletions and review changes", async () => {
-  await setCachedWords("A", [word]);
-  expect(await getCachedWords("B")).toBeNull();
-  await setCachedWords("A", [{ ...word, repetitions: 3, updatedAt: 20 }]);
-  expect((await getCachedWords("A"))?.words[0].repetitions).toBe(3);
-  expect(await getCacheMetadata("A")).toMatchObject({ userId: "A", wordCount: 1 });
-  await setCachedWords("A", []);
-  expect((await getCachedWords("A"))?.words).toEqual([]);
+test("isolates users and languages while persisting live changes", async () => {
+  await setCachedWords("A", "EN", [word]);
+  expect(await getCachedWords("B", "EN")).toBeNull();
+  expect(await getCachedWords("A", "ES")).toBeNull();
+  await setCachedWords("A", "EN", [{ ...word, repetitions: 3, updatedAt: 20 }]);
+  expect((await getCachedWords("A", "EN"))?.words[0].repetitions).toBe(3);
+  expect(await getCacheMetadata("A", "EN")).toMatchObject({ userId: "A", language: "EN", wordCount: 1 });
+  await setCachedWords("A", "EN", []);
+  expect((await getCachedWords("A", "EN"))?.words).toEqual([]);
 });
 
-test("refuses a write with another user's words", async () => {
-  await setCachedWords("B", [word]);
-  expect(await getCachedWords("B")).toBeNull();
+test("refuses words owned by another user or assigned to another language", async () => {
+  await setCachedWords("B", "EN", [word]);
+  await setCachedWords("A", "ES", [word]);
+  expect(await getCachedWords("B", "EN")).toBeNull();
+  expect(await getCachedWords("A", "ES")).toBeNull();
 });
 
 test("isolates deployments on the same browser origin", async () => {
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "dev");
-  await setCachedWords("A", [word]);
+  await setCachedWords("A", "EN", [word]);
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "prod");
-  expect(await getCachedWords("A")).toBeNull();
+  expect(await getCachedWords("A", "EN")).toBeNull();
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "dev");
 });
 
 test.each([
-  { version: 2, userId: "A", words: [word], updatedAt: 1 },
-  { version: 1, userId: "B", words: [word], updatedAt: 1 },
-  { version: 1, userId: "A", words: [{ ...word, ownerId: "B" }], updatedAt: 1 },
-  { version: 1, userId: "A", words: [{ ...word, definitions: null }], updatedAt: 1 },
+  { version: 1, userId: "A", language: "EN", words: [word], updatedAt: 1 },
+  { version: 2, userId: "B", language: "EN", words: [word], updatedAt: 1 },
+  { version: 2, userId: "A", language: "ES", words: [word], updatedAt: 1 },
+  { version: 2, userId: "A", language: "EN", words: [{ ...word, ownerId: "B" }], updatedAt: 1 },
+  { version: 2, userId: "A", language: "EN", words: [{ ...word, definitions: null }], updatedAt: 1 },
 ])("ignores corrupt, outdated or misattributed records %#", async (record) => {
-  await setCachedWords("A", []);
+  await setCachedWords("A", "EN", []);
   const db = await openDB("voce-lexicon-cache", 1);
-  await db.put("lexicons", record, `${process.env.NEXT_PUBLIC_CONVEX_URL}:lexicon:A`);
+  await db.put("lexicons", record, `${process.env.NEXT_PUBLIC_CONVEX_URL}:lexicon:A:EN`);
   db.close();
-  expect(await getCachedWords("A")).toBeNull();
+  expect(await getCachedWords("A", "EN")).toBeNull();
 });
 
 test("storage failure never escapes the optional cache layer", async () => {
   vi.spyOn(IDBDatabase.prototype, "transaction").mockImplementation(() => {
     throw new DOMException("Storage denied", "SecurityError");
   });
-  await expect(getCachedWords("A")).resolves.toBeNull();
-  await expect(setCachedWords("A", [word])).resolves.toBeUndefined();
+  await expect(getCachedWords("A", "EN")).resolves.toBeNull();
+  await expect(setCachedWords("A", "EN", [word])).resolves.toBeUndefined();
 });

@@ -24,7 +24,7 @@ test("unauthenticated and non-allowlisted accounts cannot read or initialize", a
   const denied = t.withIdentity({ subject: `${other}|session` });
   expect(await denied.query(api.account.session, { subject: `${other}|session` })).toEqual({ status: "denied" });
   await expect(denied.mutation(api.account.claimOwnership)).rejects.toThrow();
-  await expect(denied.query(api.words.getWordsByMonth, {})).rejects.toThrow();
+  await expect(denied.query(api.words.getWordsByMonth, { language: "EN" })).rejects.toThrow();
 });
 
 test("setup runs once and repeated claims do not schedule another migration", async () => {
@@ -32,7 +32,11 @@ test("setup runs once and repeated claims do not schedule another migration", as
   const { t, signedIn, owner, subject } = await setup();
   expect(await signedIn.query(api.account.session, { subject })).toEqual({ status: "setup" });
   await signedIn.mutation(api.account.claimOwnership);
-  expect(await signedIn.query(api.account.session, { subject })).toMatchObject({ status: "ready", userId: owner });
+  expect(await signedIn.query(api.account.session, { subject })).toMatchObject({
+    status: "ready",
+    userId: owner,
+    preferredLanguage: "EN",
+  });
   await signedIn.mutation(api.account.claimOwnership);
   const jobs = await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect());
   expect(jobs).toHaveLength(1);
@@ -43,5 +47,15 @@ test("a spoofed session subject is denied even for a signed-in owner", async () 
   const { t, signedIn, owner, other } = await setup();
   await t.run((ctx) => ctx.db.insert("appOwners", { key: "primary", userId: owner, createdAt: 1 }));
   expect(await signedIn.query(api.account.session, { subject: `${other}|session` })).toEqual({ status: "denied" });
-  await expect(t.withIdentity({ subject: `${other}|session` }).query(api.words.getWordsByMonth, {})).rejects.toThrow();
+  await expect(t.withIdentity({ subject: `${other}|session` }).query(api.words.getWordsByMonth, { language: "EN" })).rejects.toThrow();
+});
+
+test("language preference defaults to English and persists the latest explicit choice", async () => {
+  const { signedIn, subject } = await setup();
+  await signedIn.mutation(api.account.claimOwnership);
+  expect(await signedIn.mutation(api.account.setPreferredLanguage, { language: "JA" })).toBe("JA");
+  expect(await signedIn.query(api.account.session, { subject })).toMatchObject({
+    status: "ready",
+    preferredLanguage: "JA",
+  });
 });

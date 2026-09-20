@@ -13,6 +13,22 @@ export const lookupActionResultValidator = v.union(
   v.object({ status: v.literal("invalid"), inputWord: v.string() }),
 );
 
+export const translationCandidateResultValidator = v.union(
+  v.object({ status: v.literal("invalid"), queryZh: v.string() }),
+  v.object({
+    status: v.literal("candidates"),
+    queryZh: v.string(),
+    candidates: v.array(
+      v.object({
+        word: v.string(),
+        partOfSpeech: v.string(),
+        meaningZh: v.string(),
+        usageZh: v.string(),
+      }),
+    ),
+  }),
+);
+
 export const lookupResultValidator = v.object({
   word: v.string(),
   phonetic: v.string(),

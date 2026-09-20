@@ -4,6 +4,10 @@ Voce is a quiet, single-user multilingual vocabulary notebook for collecting and
 
 The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view uses a compact editorial workspace masthead that keeps the lookup controls prominent while bringing the latest vocabulary into the initial desktop viewport. Each vocabulary row toggles its full learning details when clicked or activated from the keyboard, while its pronunciation control remains independent. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
+Each account has one active learning language. New accounts start in English; choosing English, French, Spanish, or Japanese on the home screen saves that preference in Convex, filters the timeline at the query boundary, and restores the same language on the next visit or another device. Review opens directly into all due words for that active language.
+
+The home lookup supports two explicit directions. **Word → 中文** validates and saves vocabulary already written in the active language. **中文 → Word** accepts a meaningful Simplified Chinese word or short phrase and asks Gemini for one to three common expressions in the active language. Suggestions are ranked and include concise Chinese meaning and usage distinctions; nothing is stored until the user chooses a candidate, which then passes through the normal strict-language lookup, deduplication, and save flow. An explicit direction avoids confusing Chinese text with Japanese kanji.
+
 Production: https://voce-fawn.vercel.app
 
 ## Stack
@@ -93,7 +97,7 @@ pwsh -ExecutionPolicy Bypass -File .\scripts\generate-pwa-icons.ps1
 
 ## Chrome extension
 
-The unpacked Manifest V3 extension lives in `extension/` and talks only to the production Convex Site endpoint. It supports manual lookup from the toolbar popup and an **Add “selection” to Voce** context-menu action on selected page text. Japanese script is detected automatically; other selections use the last language chosen in the popup.
+The unpacked Manifest V3 extension lives in `extension/` and talks only to the production Convex Site endpoint. It supports manual lookup from the toolbar popup and an **Add “selection” to Voce** context-menu action on selected page text. Both entry points strictly use the last language chosen in the popup; selected text never changes the extension language automatically.
 
 Install and pair it:
 
@@ -141,7 +145,7 @@ The Gemini and JWT private keys must never be configured as public Next.js envir
 
 ## Review shortcuts
 
-Opening `/review` first shows a setup screen. Choose one language (`EN`, `FR`, `ES`, or `JA`) and a collection range: the current month, the latest three calendar months, or all time. Only due words matching both choices enter the session, and the completion screen can return to the selector for another group.
+Opening `/review` immediately starts the due queue for the account's active learning language. The language is changed only from the home screen; review does not accept a URL language override or ask for a separate language and date-range selection.
 
 | Key | Action |
 | --- | --- |
@@ -161,7 +165,7 @@ After authentication, the home shell appears while a read-only session query ver
 
 Once the server confirms the user, the timeline starts IndexedDB reading and its existing reactive Convex query in parallel. Cached words render while the live result is pending; live results (including an empty list) always win and update the cache automatically. Only the vocabulary region shows skeletons on a cache miss. The existing 500-word query limit also applies to this cache; it is not a backup of the entire database.
 
-IndexedDB database `voce-lexicon-cache`, store `lexicons`, uses a deployment-URL + user-ID key. Each record is `{ version: 1, userId, updatedAt, words: WordDocument[] }`. Runtime validation rejects corrupt records, unknown versions and mismatched word owners. Storage failures silently fall back to Convex. Sign-out immediately unmounts personal UI while retaining isolated cache records for the next verified sign-in. Session changes remount personal state; an unverified last-user ID never grants access to a cache.
+IndexedDB database `voce-lexicon-cache`, store `lexicons`, uses a deployment-URL + user-ID + language key. Each record is `{ version: 2, userId, language, updatedAt, words: WordDocument[] }`. Runtime validation rejects corrupt records, unknown versions, mismatched word owners, and words from another language. Storage failures silently fall back to Convex. Sign-out immediately unmounts personal UI while retaining isolated cache records for the next verified sign-in. Session changes remount personal state; an unverified last-user ID never grants access to a cache.
 
 Offline reading works after identity confirmation. A fully offline cold start cannot safely confirm the current account, so it does not reveal cached words. There is no offline write queue, conflict resolution or TTL. Convex remains the sole cloud source of truth; the service worker still never caches auth or Convex responses.
 
@@ -174,13 +178,14 @@ Run `pnpm test` for IndexedDB isolation/corruption/failure tests and Convex init
 - Suspected misspellings are not saved. Gemini returns up to three correctly spelled candidates with language and a short Chinese meaning; the web dialog and extension popup let the user select one or return to editing. Selecting a candidate performs a fresh, authorized lookup, generates the correct entry and deduplicates it before saving. Valid inflections remain valid vocabulary; unrecognized input is rejected. A lexical change silently made by the model also requires confirmation, and explicit misspelling-form definitions are blocked. Right-click extension lookups report that nothing was saved and direct the user to the popup for correction.
 - Normal new words still need one generation request. Spelling confirmation may require a second request unless the chosen word already exists. The lookup API now returns `created`, `existing`, `needs_confirmation` or `invalid`; consumers must only treat the first two as saved results. Deploy updated backend and clients together. Existing historical entries remain unchanged, and language/spelling accuracy still depends on the model; mocked regression tests verify write gating rather than prove model accuracy.
 
-- New lookups check the input language within the same Gemini request. The selected language is preserved for valid words, loanwords and ambiguous shared spellings; a clearly mismatched input can be corrected to EN/FR/ES/JA. Generated content and destination-language deduplication use the returned language. The webpage switches its language tab and explains the correction; the extension popup also reflects it, and selection lookups display the saved language.
-- A matching existing entry in the selected language still returns without an AI call. Historical misclassified entries are not automatically reanalyzed or migrated. AI language decisions are not deterministic dictionary verification; tests mock generation to verify routing, validation and duplicate/progress preservation.
+- New lookups are strict to the explicitly selected language. Gemini may only validate, define, or suggest spellings from that language; input belonging to another language returns `invalid`, is not identified or suggested, and never changes the saved preference. The server also rejects valid results and spelling candidates whose returned language differs from the request.
+- Chinese-to-foreign lookup is suggestion-only: meaningful Chinese input returns at most three normalized, same-language candidates and performs no database write. Gibberish, instructions, unsupported names, overly broad text, non-Chinese input, and model responses in another language are rejected. Selecting a candidate performs a fresh normal lookup before saving, so existing entries still deduplicate without losing review progress.
+- A matching existing entry in the selected language still returns without an AI call. Historical misclassified entries are not automatically reanalyzed or migrated. AI validation is not deterministic dictionary verification; tests mock generation to verify strict-language write gating and duplicate/progress preservation.
 
 - Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
 - All vocabulary queries, mutations, review updates, and Gemini actions require the authenticated app owner; duplicates are scoped to that owner.
 - Extension requests authenticate with a single revocable token minted from an owner-only, one-time pairing code; raw pairing codes and tokens are never stored in Convex.
 - Duplicate lookups return the existing entry before calling Gemini, leaving its generated content, review progress, and original month unchanged.
-- The home timeline follows the active lookup language and can instantly search saved entries by word, pronunciation, infinitive, grammar note, part of speech, or Chinese definition; review sessions can independently select a language and collection-time range.
+- The home timeline and review queue both follow the persisted active learning language. Vocabulary and due-review queries filter by that language on the server; the timeline can instantly search its loaded entries by word, pronunciation, infinitive, grammar note, part of speech, or Chinese definition.
 - Gemini output is constrained by a JSON schema and validated again with Zod before any write.
 - Review interval calculations run inside the Convex mutation.

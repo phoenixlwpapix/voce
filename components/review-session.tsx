@@ -1,143 +1,26 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { ArrowLeft, CalendarRange, Check, CornerDownLeft, LoaderCircle, RotateCcw, Volume2 } from "lucide-react";
+import { ArrowLeft, Check, CornerDownLeft, LoaderCircle, RotateCcw, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { LanguageBadge } from "@/components/language-badge";
 import { Button } from "@/components/ui/button";
+import { useOwnerSession } from "@/hooks/use-owner-session";
 import { useSpeech } from "@/hooks/use-speech";
+import { languageNames } from "@/lib/constants";
 import { getUserErrorMessage } from "@/lib/errors";
-import { getLocalMonthGroup } from "@/lib/month";
 import { formatPhonetic } from "@/lib/phonetics";
 import { cn } from "@/lib/utils";
-import { languages, type Language, type WordDocument } from "@/lib/types";
+import type { WordDocument } from "@/lib/types";
 
 const genderLabel = { masculine: "Masculine", feminine: "Feminine", neutral: "Neutral" } as const;
 
-type ReviewRange = "currentMonth" | "threeMonths" | "all";
-type ReviewConfig = { language: Language; range: ReviewRange };
-
-const reviewRangeOptions: Array<{
-  value: ReviewRange;
-  label: string;
-  description: string;
-}> = [
-  { value: "currentMonth", label: "This month", description: "Due words added this month" },
-  { value: "threeMonths", label: "Last 3 months", description: "Due words added during the last three calendar months" },
-  { value: "all", label: "All time", description: "All due words in your collection" },
-];
-
-const reviewRangeLabels: Record<ReviewRange, string> = {
-  currentMonth: "This month",
-  threeMonths: "Last 3 months",
-  all: "All time",
-};
-
-const languageSelectionClasses: Record<Language, string> = {
-  EN: "data-[active=true]:text-en",
-  FR: "data-[active=true]:text-fr",
-  ES: "data-[active=true]:text-es",
-  JA: "data-[active=true]:text-ja",
-};
-
-function getRangeCutoff(range: ReviewRange, timestamp: number) {
-  if (range === "all") return null;
-  const cutoffDate = new Date(timestamp);
-  cutoffDate.setDate(1);
-  if (range === "threeMonths") cutoffDate.setMonth(cutoffDate.getMonth() - 2);
-  return getLocalMonthGroup(cutoffDate);
-}
-
 function isTypingTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && (target.matches("input, textarea, select") || target.isContentEditable);
-}
-
-function ReviewSetup({
-  initialLanguage,
-  onStart,
-}: {
-  initialLanguage: Language;
-  onStart: (config: ReviewConfig) => void;
-}) {
-  const [language, setLanguage] = useState<Language>(initialLanguage);
-  const [range, setRange] = useState<ReviewRange>("currentMonth");
-
-  return (
-    <main className="flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-7">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link>
-        </Button>
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Review setup</p>
-      </header>
-
-      <section className="mx-auto flex w-full max-w-xl flex-1 items-center py-12" aria-labelledby="review-setup-title">
-        <div className="w-full">
-          <div className="mb-10 text-center">
-            <CalendarRange className="mx-auto size-5 text-muted-foreground" aria-hidden="true" />
-            <h1 id="review-setup-title" className="mt-5 font-serif text-4xl tracking-[-0.045em] sm:text-5xl">Choose today&apos;s review set</h1>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">Only due words matching both choices will be included.</p>
-          </div>
-
-          <fieldset>
-            <legend className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Language</legend>
-            <div className="grid grid-cols-4 border-y border-border">
-              {languages.map((item, index) => (
-                <button
-                  key={item}
-                  type="button"
-                  data-active={language === item}
-                  onClick={() => setLanguage(item)}
-                  className={cn(
-                    "h-12 border-border font-mono text-xs tracking-[0.16em] text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-[active=true]:bg-secondary data-[active=true]:font-medium motion-reduce:transition-none",
-                    index < languages.length - 1 && "border-r",
-                    languageSelectionClasses[item],
-                  )}
-                  aria-pressed={language === item}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="mt-8">
-            <legend className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Time range</legend>
-            <div className="border-t border-border">
-              {reviewRangeOptions.map((option) => {
-                const selected = range === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setRange(option.value)}
-                    className="grid min-h-16 w-full grid-cols-[1fr_auto] items-center gap-4 border-b border-border px-1 text-left outline-none transition-colors hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none"
-                    aria-pressed={selected}
-                  >
-                    <span>
-                      <span className="block text-sm font-medium">{option.label}</span>
-                      <span className="mt-1 block text-xs text-muted-foreground">{option.description}</span>
-                    </span>
-                    <span className={cn("grid size-5 place-items-center border border-border", selected && "border-foreground bg-foreground text-background")} aria-hidden="true">
-                      {selected ? <Check className="size-3" /> : null}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <Button type="button" className="mt-8 w-full" onClick={() => onStart({ language, range })}>
-            Start review · {language} · {reviewRangeLabels[range]}
-          </Button>
-        </div>
-      </section>
-    </main>
-  );
 }
 
 function ReviewCardBack({ word }: { word: WordDocument }) {
@@ -173,43 +56,22 @@ function ReviewCardBack({ word }: { word: WordDocument }) {
   );
 }
 
-export function ReviewSession({ initialLanguage }: { initialLanguage: Language }) {
+export function ReviewSession() {
+  const account = useOwnerSession();
   const router = useRouter();
-  const [reviewConfig, setReviewConfig] = useState<ReviewConfig | null>(null);
-  const [queryTime, setQueryTime] = useState(() => Date.now());
-  const rawQueue = useQuery(
+  const language = account?.preferredLanguage;
+  const [queryTime] = useState(() => Date.now());
+  const queue = useQuery(
     api.words.getReviewQueue,
-    reviewConfig ? { now: queryTime } : "skip",
+    language ? { language, now: queryTime } : "skip",
   );
   const updateReviewState = useMutation(api.words.updateReviewState);
   const { available: speechAvailable, speak } = useSpeech();
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(() => new Set());
   const [flippedId, setFlippedId] = useState<string | null>(null);
   const [rating, setRating] = useState(false);
-  const queue = useMemo(() => {
-    if (!rawQueue || !reviewConfig) return rawQueue;
-    const cutoff = getRangeCutoff(reviewConfig.range, queryTime);
-    return rawQueue.filter(
-      (word) =>
-        word.language === reviewConfig.language &&
-        (cutoff === null || word.monthGroup >= cutoff),
-    );
-  }, [queryTime, rawQueue, reviewConfig]);
   const current = queue?.find((word) => !reviewedIds.has(word._id));
   const flipped = current !== undefined && flippedId === current._id;
-
-  const startReview = useCallback((config: ReviewConfig) => {
-    setQueryTime(Date.now());
-    setReviewedIds(new Set());
-    setFlippedId(null);
-    setReviewConfig(config);
-  }, []);
-
-  const resetSelection = useCallback(() => {
-    setReviewedIds(new Set());
-    setFlippedId(null);
-    setReviewConfig(null);
-  }, []);
 
   const playCurrent = useCallback(() => {
     if (current) speak(current.word, current.language);
@@ -238,8 +100,6 @@ export function ReviewSession({ initialLanguage }: { initialLanguage: Language }
       if (event.key === "Escape") {
         event.preventDefault();
         router.push("/");
-      } else if (!reviewConfig) {
-        return;
       } else if (event.code === "Space") {
         event.preventDefault();
         playCurrent();
@@ -256,13 +116,9 @@ export function ReviewSession({ initialLanguage }: { initialLanguage: Language }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [current, playCurrent, rateCurrent, reviewConfig, router]);
+  }, [current, playCurrent, rateCurrent, router]);
 
-  if (!reviewConfig) {
-    return <ReviewSetup initialLanguage={initialLanguage} onStart={startReview} />;
-  }
-
-  if (queue === undefined) {
+  if (!language || queue === undefined) {
     return <main className="grid min-h-dvh place-items-center"><div className="text-center"><LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" /><p className="mt-4 text-sm text-muted-foreground">Preparing today&apos;s cards…</p></div></main>;
   }
 
@@ -272,13 +128,10 @@ export function ReviewSession({ initialLanguage }: { initialLanguage: Language }
       <main className="grid min-h-dvh place-items-center px-5 text-center">
         <div className="max-w-md">
           <span className="mx-auto grid size-12 place-items-center rounded-full border border-border"><Check className="size-5" aria-hidden="true" /></span>
-          <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Review complete</p>
+          <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]} review complete</p>
           <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">That&apos;s all for today.</h1>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `You reviewed ${reviewedCount} ${reviewedCount === 1 ? "word" : "words"}.` : "No due words match this language and time range."}</p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button type="button" variant="outline" onClick={resetSelection}>Choose again</Button>
-            <Button asChild><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link></Button>
-          </div>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `You reviewed ${reviewedCount} ${reviewedCount === 1 ? "word" : "words"}.` : `No ${languageNames[language]} words are due.`}</p>
+          <Button asChild className="mt-8"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link></Button>
         </div>
       </main>
     );
@@ -296,7 +149,7 @@ export function ReviewSession({ initialLanguage }: { initialLanguage: Language }
     <main className="flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
         <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Exit</Link></Button>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{reviewConfig.language} · {reviewRangeLabels[reviewConfig.range]} · {String(position).padStart(2, "0")} / {String(total).padStart(2, "0")}</p>
+        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{language} · Due now · {String(position).padStart(2, "0")} / {String(total).padStart(2, "0")}</p>
         <Button type="button" variant="ghost" size="icon" onClick={playCurrent} disabled={!speechAvailable} aria-label={`Pronounce ${current.word}`} title={speechAvailable ? "Press Space to pronounce" : "Speech is unavailable in this browser"}><Volume2 className="size-4" /></Button>
       </header>
 

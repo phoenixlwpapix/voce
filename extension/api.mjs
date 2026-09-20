@@ -91,10 +91,6 @@ export function normalizeWord(value) {
   return value.trim().replace(/\s+/g, " ").normalize("NFC");
 }
 
-export function detectLanguage(value, fallback) {
-  return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(value) ? "JA" : fallback;
-}
-
 export async function lookupWord(word, language) {
   const normalizedWord = normalizeWord(word);
   if (!normalizedWord) {

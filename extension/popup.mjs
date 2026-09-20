@@ -93,13 +93,12 @@ pairingForm.addEventListener("submit", (event) => {
 
 function submitLookup(word, requestedLanguage) {
   if (lookupSubmit.disabled) return;
-  const languageAtStart = selectedLanguage;
   setBusy(lookupSubmit, true, "…");
   setMessage(lookupMessage, "Looking up and saving…");
   void lookupWord(word, requestedLanguage)
     .then((result) => {
       if (result.status === "invalid") {
-        setMessage(lookupMessage, "Couldn't verify this word. Check the spelling. Nothing was saved.", true);
+        setMessage(lookupMessage, `Couldn't find this word in ${languageNames[requestedLanguage]}. Check the spelling.`, true);
         return;
       }
       if (result.status === "needs_confirmation") {
@@ -124,13 +123,7 @@ function submitLookup(word, requestedLanguage) {
       const message = result.status === "created"
         ? `Added ${result.word}`
         : `${result.word} is already saved`;
-      const corrected = languages.includes(result.language) && result.language !== languageAtStart;
-      if (corrected && selectedLanguage === languageAtStart) {
-        selectedLanguage = result.language;
-        void setDefaultLanguage(result.language);
-        renderLanguages();
-      }
-      setMessage(lookupMessage, corrected ? `${message} · Detected ${languageNames[result.language]}` : message);
+      setMessage(lookupMessage, message);
       wordInput.value = "";
       wordInput.focus();
     })

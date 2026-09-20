@@ -6,9 +6,8 @@ import Link from "next/link";
 import { BookOpenText, LogOut, Puzzle } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import type { Language } from "@/lib/types";
 
-export function SiteHeader({ reviewLanguage }: { reviewLanguage?: Language }) {
+export function SiteHeader() {
   const signOut = useContext(SignOutContext);
   const account = useOwnerSession();
 
@@ -20,7 +19,7 @@ export function SiteHeader({ reviewLanguage }: { reviewLanguage?: Language }) {
       </Link>
       <nav className="flex items-center gap-1" aria-label="Main navigation">
         <Button asChild variant="ghost" size="default" className="px-3 text-xs">
-          <Link href={reviewLanguage ? `/review?language=${reviewLanguage}` : "/review"}>
+          <Link href="/review">
             <BookOpenText className="size-4" aria-hidden="true" />
             <span>Review</span>
           </Link>

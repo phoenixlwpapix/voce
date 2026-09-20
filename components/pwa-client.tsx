@@ -13,13 +13,38 @@ export function PwaClient() {
     window.addEventListener("online", updateConnectionStatus);
     window.addEventListener("offline", updateConnectionStatus);
 
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      void navigator.serviceWorker
-        .register("/sw.js", {
-          scope: "/",
-          updateViaCache: "none",
-        })
-        .catch(() => undefined);
+    if ("serviceWorker" in navigator) {
+      if (process.env.NODE_ENV === "production") {
+        void navigator.serviceWorker
+          .register("/sw.js", {
+            scope: "/",
+            updateViaCache: "none",
+          })
+          .catch(() => undefined);
+      } else {
+        // A worker installed by a previous production-mode localhost run keeps
+        // controlling development pages until it is explicitly removed. Its
+        // cache-first chunks can then conflict with Turbopack's current graph.
+        void navigator.serviceWorker
+          .getRegistrations()
+          .then((registrations) =>
+            Promise.all(registrations.map((registration) => registration.unregister())),
+          )
+          .catch(() => undefined);
+
+        if ("caches" in window) {
+          void caches
+            .keys()
+            .then((keys) =>
+              Promise.all(
+                keys
+                  .filter((key) => key.startsWith("voce-"))
+                  .map((key) => caches.delete(key)),
+              ),
+            )
+            .catch(() => undefined);
+        }
+      }
     }
 
     return () => {

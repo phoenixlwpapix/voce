@@ -8,7 +8,7 @@ const dayInMilliseconds = 24 * 60 * 60 * 1000;
 const maxWordsPerQuery = 500;
 
 export const getWordsByMonth = query({
-  args: { monthGroup: v.optional(v.string()) },
+  args: { language: languageValidator, monthGroup: v.optional(v.string()) },
   returns: v.array(schema.doc("words")),
   handler: async (ctx, args) => {
     const ownerId = await requireOwner(ctx);
@@ -18,8 +18,11 @@ export const getWordsByMonth = query({
       }
       const words = await ctx.db
         .query("words")
-        .withIndex("by_ownerId_monthGroup", (index) =>
-          index.eq("ownerId", ownerId).eq("monthGroup", args.monthGroup!),
+        .withIndex("by_ownerId_language_monthGroup", (index) =>
+          index
+            .eq("ownerId", ownerId)
+            .eq("language", args.language)
+            .eq("monthGroup", args.monthGroup!),
         )
         .take(maxWordsPerQuery);
       return words.sort((first, second) => second.createdAt - first.createdAt);
@@ -27,14 +30,16 @@ export const getWordsByMonth = query({
 
     return await ctx.db
       .query("words")
-      .withIndex("by_ownerId_createdAt", (index) => index.eq("ownerId", ownerId))
+      .withIndex("by_ownerId_language_createdAt", (index) =>
+        index.eq("ownerId", ownerId).eq("language", args.language),
+      )
       .order("desc")
       .take(maxWordsPerQuery);
   },
 });
 
 export const getReviewQueue = query({
-  args: { now: v.number() },
+  args: { language: languageValidator, now: v.number() },
   returns: v.array(schema.doc("words")),
   handler: async (ctx, args) => {
     const ownerId = await requireOwner(ctx);
@@ -43,8 +48,11 @@ export const getReviewQueue = query({
     }
     return await ctx.db
       .query("words")
-      .withIndex("by_ownerId_nextReviewAt", (index) =>
-        index.eq("ownerId", ownerId).lte("nextReviewAt", args.now),
+      .withIndex("by_ownerId_language_nextReviewAt", (index) =>
+        index
+          .eq("ownerId", ownerId)
+          .eq("language", args.language)
+          .lte("nextReviewAt", args.now),
       )
       .order("asc")
       .take(maxWordsPerQuery);

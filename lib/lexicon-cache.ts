@@ -1,10 +1,11 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import { z } from "zod";
-import { languages, type WordDocument } from "./types";
+import { languages, type Language, type WordDocument } from "./types";
 
 export type LexiconCache = {
-  version: 1;
+  version: 2;
   userId: string;
+  language: Language;
   updatedAt: number;
   words: WordDocument[];
 };
@@ -26,7 +27,7 @@ const wordShape = z.object({
   createdAt: z.number(), updatedAt: z.number(),
 });
 const cacheShape = z.object({
-  version: z.literal(1), userId: z.string(), updatedAt: z.number().finite(),
+  version: z.literal(2), userId: z.string(), language: z.enum(languages), updatedAt: z.number().finite(),
   words: z.array(z.custom<WordDocument>((word) => wordShape.safeParse(word).success)).max(500),
 });
 
@@ -55,37 +56,43 @@ function getDatabase() {
   return connection;
 }
 
-function cacheKey(userId: string) {
-  return `${process.env.NEXT_PUBLIC_CONVEX_URL}:lexicon:${userId}`;
+function cacheKey(userId: string, language: Language) {
+  return `${process.env.NEXT_PUBLIC_CONVEX_URL}:lexicon:${userId}:${language}`;
 }
 
-export async function getCachedWords(userId: string): Promise<LexiconCache | null> {
+export async function getCachedWords(userId: string, language: Language): Promise<LexiconCache | null> {
   try {
     const db = await getDatabase();
-    const parsed = cacheShape.safeParse(await db.get("lexicons", cacheKey(userId)));
-    if (!parsed.success || parsed.data.userId !== userId ||
-        parsed.data.words.some((word) => word.ownerId !== userId)) return null;
+    const parsed = cacheShape.safeParse(await db.get("lexicons", cacheKey(userId, language)));
+    if (!parsed.success || parsed.data.userId !== userId || parsed.data.language !== language ||
+        parsed.data.words.some((word) => word.ownerId !== userId || word.language !== language)) return null;
     return parsed.data;
   } catch {
     return null;
   }
 }
 
-export async function setCachedWords(userId: string, words: WordDocument[]): Promise<void> {
-  if (words.some((word) => word.ownerId !== userId)) return;
+export async function setCachedWords(userId: string, language: Language, words: WordDocument[]): Promise<void> {
+  if (words.some((word) => word.ownerId !== userId || word.language !== language)) return;
   try {
     const db = await getDatabase();
-    await db.put("lexicons", { version: 1, userId, words, updatedAt: Date.now() }, cacheKey(userId));
+    await db.put(
+      "lexicons",
+      { version: 2, userId, language, words, updatedAt: Date.now() },
+      cacheKey(userId, language),
+    );
   } catch {
     // Convex remains usable when storage is blocked, full, or unavailable.
   }
 }
 
-export async function clearCachedWords(userId: string): Promise<void> {
-  try { await (await getDatabase()).delete("lexicons", cacheKey(userId)); } catch { /* Optional cache. */ }
+export async function clearCachedWords(userId: string, language: Language): Promise<void> {
+  try { await (await getDatabase()).delete("lexicons", cacheKey(userId, language)); } catch { /* Optional cache. */ }
 }
 
-export async function getCacheMetadata(userId: string) {
-  const cache = await getCachedWords(userId);
-  return cache ? { userId: cache.userId, updatedAt: cache.updatedAt, wordCount: cache.words.length } : null;
+export async function getCacheMetadata(userId: string, language: Language) {
+  const cache = await getCachedWords(userId, language);
+  return cache
+    ? { userId: cache.userId, language: cache.language, updatedAt: cache.updatedAt, wordCount: cache.words.length }
+    : null;
 }

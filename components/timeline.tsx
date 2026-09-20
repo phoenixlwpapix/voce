@@ -44,7 +44,7 @@ function matchesSearch(word: WordDocument, query: string, language: Language) {
 }
 
 export function Timeline({ language }: { language: Language }) {
-  const { words } = useCachedLexicon();
+  const { words } = useCachedLexicon(language);
   const { available: speechAvailable, speak } = useSpeech();
   const [filterMonth, setFilterMonth] = useState("");
   const [searchQuery, setSearchQuery] = useState("");

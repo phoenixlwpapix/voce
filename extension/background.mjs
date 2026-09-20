@@ -1,7 +1,6 @@
 /* global chrome */
 
 import {
-  detectLanguage,
   getSettings,
   lookupWord,
   normalizeWord,
@@ -40,7 +39,7 @@ async function addSelection(selectionText) {
     return;
   }
 
-  const language = detectLanguage(word, settings.defaultLanguage);
+  const language = settings.defaultLanguage;
   await setBadge("…", `Adding ${word} to Voce`);
   try {
     const result = await lookupWord(word, language);
