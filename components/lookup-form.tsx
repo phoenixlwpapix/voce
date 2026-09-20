@@ -2,7 +2,7 @@
 
 import { useAction } from "convex/react";
 import { useOwnerSession } from "@/hooks/use-owner-session";
-import { ArrowUpRight, Languages, LoaderCircle } from "lucide-react";
+import { ArrowLeftRight, ArrowUpRight, Languages, LoaderCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -174,27 +174,22 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="self-end">
-          <div className="mb-3 flex items-center gap-1" role="group" aria-label="Lookup direction">
+          <div className="mb-3 inline-flex min-h-8 items-center border border-border/70 bg-secondary/40" role="group" aria-label="Lookup direction">
+            <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "chinese" ? "zh-CN" : localeByLanguage[language]}>
+              {mode === "chinese" ? "中文" : language}
+            </span>
             <button
               type="button"
-              data-active={mode === "foreign"}
-              onClick={() => changeMode("foreign")}
+              onClick={() => changeMode(mode === "foreign" ? "chinese" : "foreign")}
               disabled={submitting}
-              className="min-h-8 border border-transparent px-3 font-mono text-[10px] tracking-[0.12em] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:border-border data-[active=true]:bg-secondary data-[active=true]:text-foreground"
-              aria-pressed={mode === "foreign"}
+              className="flex size-8 shrink-0 items-center justify-center border-x border-border/70 bg-background text-muted-foreground outline-none transition-[color,background-color] hover:bg-secondary hover:text-foreground focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+              aria-label={`Switch lookup direction to ${mode === "foreign" ? `Chinese to ${languageNames[language]}` : `${languageNames[language]} to Chinese`}`}
             >
-              Word → 中文
+              <ArrowLeftRight className="size-3.5" aria-hidden="true" />
             </button>
-            <button
-              type="button"
-              data-active={mode === "chinese"}
-              onClick={() => changeMode("chinese")}
-              disabled={submitting}
-              className="min-h-8 border border-transparent px-3 font-mono text-[10px] tracking-[0.12em] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:border-border data-[active=true]:bg-secondary data-[active=true]:text-foreground"
-              aria-pressed={mode === "chinese"}
-            >
-              中文 → Word
-            </button>
+            <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "foreign" ? "zh-CN" : localeByLanguage[language]}>
+              {mode === "foreign" ? "中文" : language}
+            </span>
           </div>
           <fieldset className="mb-3 flex gap-1" disabled={submitting || languageSwitching || !account}>
             <legend className="sr-only">Choose vocabulary language</legend>
