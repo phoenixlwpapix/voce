@@ -1,12 +1,13 @@
 /* global chrome */
 
 import {
+  getPreferredLanguage,
   getSettings,
   languageNames,
   languages,
   lookupWord,
   pairExtension,
-  setDefaultLanguage,
+  setPreferredLanguage,
 } from "./api.mjs";
 
 const pairingView = document.getElementById("pairing-view");
@@ -23,6 +24,7 @@ const lookupMessage = document.getElementById("lookup-message");
 const languageOptions = document.getElementById("language-options");
 
 let selectedLanguage = "EN";
+let languageSyncing = false;
 
 function setConnected(connected) {
   pairingView.hidden = connected;
@@ -56,13 +58,37 @@ function renderLanguages() {
     button.title = languageNames[language];
     button.dataset.active = String(language === selectedLanguage);
     button.setAttribute("aria-pressed", String(language === selectedLanguage));
+    button.disabled = languageSyncing;
     button.addEventListener("click", () => {
-      selectedLanguage = language;
-      void setDefaultLanguage(language);
-      renderLanguages();
+      void switchLanguage(language);
     });
     languageOptions.append(button);
   }
+}
+
+async function switchLanguage(language) {
+  if (languageSyncing || language === selectedLanguage) return;
+  const previousLanguage = selectedLanguage;
+  selectedLanguage = language;
+  languageSyncing = true;
+  renderLanguages();
+  setMessage(lookupMessage, "Updating your learning language…");
+  try {
+    selectedLanguage = await setPreferredLanguage(language);
+    setMessage(lookupMessage, `Now learning ${languageNames[selectedLanguage]}.`);
+  } catch (error) {
+    selectedLanguage = previousLanguage;
+    setMessage(lookupMessage, error instanceof Error ? error.message : "The language couldn't be updated.", true);
+    if (error && error.status === 401) setConnected(false);
+  } finally {
+    languageSyncing = false;
+    renderLanguages();
+  }
+}
+
+async function syncPreferredLanguage() {
+  selectedLanguage = await getPreferredLanguage();
+  renderLanguages();
 }
 
 pairingCode.addEventListener("input", () => {
@@ -84,6 +110,10 @@ pairingForm.addEventListener("submit", (event) => {
     .then(() => {
       setConnected(true);
       wordInput.focus();
+      void syncPreferredLanguage().catch((error) => {
+        setMessage(lookupMessage, error instanceof Error ? error.message : "The language couldn't be loaded.", true);
+        if (error && error.status === 401) setConnected(false);
+      });
     })
     .catch((error) => {
       setMessage(pairingError, error instanceof Error ? error.message : "Pairing failed.", true);
@@ -146,8 +176,13 @@ if (extensionRuntimeAvailable) {
     selectedLanguage = settings.defaultLanguage;
     renderLanguages();
     setConnected(Boolean(settings.token));
-    if (settings.token) wordInput.focus();
-    else pairingCode.focus();
+    if (settings.token) {
+      wordInput.focus();
+      void syncPreferredLanguage().catch((error) => {
+        setMessage(lookupMessage, error instanceof Error ? error.message : "The language couldn't be loaded.", true);
+        if (error && error.status === 401) setConnected(false);
+      });
+    } else pairingCode.focus();
   });
 } else {
   selectedLanguage = "JA";

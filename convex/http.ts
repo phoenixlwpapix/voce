@@ -108,4 +108,59 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/api/extension/preferences",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const authorization = request.headers.get("Authorization") ?? "";
+    const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+    if (!token) {
+      return jsonResponse({ error: "Reconnect the extension to Voce." }, 401);
+    }
+
+    const result = await ctx.runAction(
+      internal.extensionAuth.getPreferredLanguageFromExtension,
+      { token },
+    );
+    return result.ok
+      ? jsonResponse({ language: result.language })
+      : jsonResponse({ error: "Reconnect the extension to Voce." }, 401);
+  }),
+});
+
+http.route({
+  path: "/api/extension/preferences",
+  method: "PUT",
+  handler: httpAction(async (ctx, request) => {
+    const authorization = request.headers.get("Authorization") ?? "";
+    const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+    if (!token) {
+      return jsonResponse({ error: "Reconnect the extension to Voce." }, 401);
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonResponse({ error: "Choose a valid language." }, 400);
+    }
+    if (
+      !body ||
+      typeof body !== "object" ||
+      !("language" in body) ||
+      !isLanguage(body.language)
+    ) {
+      return jsonResponse({ error: "Choose a valid language." }, 400);
+    }
+
+    const result = await ctx.runAction(
+      internal.extensionAuth.setPreferredLanguageFromExtension,
+      { token, language: body.language },
+    );
+    return result.ok
+      ? jsonResponse({ language: result.language })
+      : jsonResponse({ error: "Reconnect the extension to Voce." }, 401);
+  }),
+});
+
 export default http;

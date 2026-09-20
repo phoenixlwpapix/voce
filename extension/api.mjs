@@ -91,6 +91,57 @@ export function normalizeWord(value) {
   return value.trim().replace(/\s+/g, " ").normalize("NFC");
 }
 
+async function readAuthorizedJson(response) {
+  try {
+    return await readJson(response);
+  } catch (error) {
+    if (error instanceof VoceApiError && error.status === 401) {
+      await clearToken();
+    }
+    throw error;
+  }
+}
+
+export async function getPreferredLanguage() {
+  const settings = await getSettings();
+  if (!settings.token) {
+    throw new VoceApiError("Connect the extension to Voce first.", 401);
+  }
+  const response = await fetch(`${apiBase}/api/extension/preferences`, {
+    headers: { Authorization: `Bearer ${settings.token}` },
+  });
+  const result = await readAuthorizedJson(response);
+  if (!result || !languages.includes(result.language)) {
+    throw new VoceApiError("The language preference response was invalid.", 502);
+  }
+  await setDefaultLanguage(result.language);
+  return result.language;
+}
+
+export async function setPreferredLanguage(language) {
+  if (!languages.includes(language)) {
+    throw new VoceApiError("Choose a valid language.", 400);
+  }
+  const { token } = await getSettings();
+  if (!token) {
+    throw new VoceApiError("Connect the extension to Voce first.", 401);
+  }
+  const response = await fetch(`${apiBase}/api/extension/preferences`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ language }),
+  });
+  const result = await readAuthorizedJson(response);
+  if (!result || !languages.includes(result.language)) {
+    throw new VoceApiError("The language preference response was invalid.", 502);
+  }
+  await setDefaultLanguage(result.language);
+  return result.language;
+}
+
 export async function lookupWord(word, language) {
   const normalizedWord = normalizeWord(word);
   if (!normalizedWord) {
@@ -117,12 +168,5 @@ export async function lookupWord(word, language) {
       monthGroup: getLocalMonthGroup(),
     }),
   });
-  try {
-    return await readJson(response);
-  } catch (error) {
-    if (error instanceof VoceApiError && error.status === 401) {
-      await clearToken();
-    }
-    throw error;
-  }
+  return await readAuthorizedJson(response);
 }

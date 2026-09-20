@@ -8,12 +8,14 @@ import type { Id } from "./_generated/dataModel";
 import { action, internalAction } from "./_generated/server";
 import { lookupAndSaveForOwner, type LookupActionResult } from "./lookupCore";
 import { languageValidator, lookupActionResultValidator } from "./validators";
+import type { Infer } from "convex/values";
 
 const pairingLifetimeMs = 10 * 60 * 1000;
 const pairingAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const pairingPattern = /^VOCE-[2-9A-HJ-NP-Z]{5}-[2-9A-HJ-NP-Z]{5}$/;
 const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
 const deviceIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+type Language = Infer<typeof languageValidator>;
 
 function hashSecret(value: string) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -106,5 +108,52 @@ export const lookupFromExtension = internalAction({
       monthGroup: args.monthGroup,
     });
     return { ok: true as const, result };
+  },
+});
+
+const extensionLanguageResultValidator = v.union(
+  v.object({ ok: v.literal(true), language: languageValidator }),
+  v.object({ ok: v.literal(false) }),
+);
+
+export const getPreferredLanguageFromExtension = internalAction({
+  args: { token: v.string() },
+  returns: extensionLanguageResultValidator,
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ ok: true; language: Language } | { ok: false }> => {
+    if (!tokenPattern.test(args.token)) return { ok: false as const };
+    const ownerId: Id<"users"> | null = await ctx.runQuery(
+      internal.extensionAccess.authenticateToken,
+      { tokenHash: hashSecret(args.token) },
+    );
+    if (ownerId === null) return { ok: false as const };
+    const language: Language = await ctx.runQuery(
+      internal.account.getPreferredLanguageForOwner,
+      { userId: ownerId },
+    );
+    return { ok: true as const, language };
+  },
+});
+
+export const setPreferredLanguageFromExtension = internalAction({
+  args: { token: v.string(), language: languageValidator },
+  returns: extensionLanguageResultValidator,
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ ok: true; language: Language } | { ok: false }> => {
+    if (!tokenPattern.test(args.token)) return { ok: false as const };
+    const ownerId: Id<"users"> | null = await ctx.runQuery(
+      internal.extensionAccess.authenticateToken,
+      { tokenHash: hashSecret(args.token) },
+    );
+    if (ownerId === null) return { ok: false as const };
+    const language: Language = await ctx.runMutation(
+      internal.account.setPreferredLanguageForOwner,
+      { userId: ownerId, language: args.language },
+    );
+    return { ok: true as const, language };
   },
 });

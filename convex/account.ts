@@ -2,12 +2,43 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { env, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import {
+  env,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
 import { requireOwner } from "./ownership";
 import { languageValidator } from "./validators";
+import type { Infer } from "convex/values";
 
 const ownerKey = "primary" as const;
 const migrationBatchSize = 100;
+type Language = Infer<typeof languageValidator>;
+
+async function writePreferredLanguage(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  language: Language,
+) {
+  const preferences = await ctx.db
+    .query("userPreferences")
+    .withIndex("by_userId", (index) => index.eq("userId", userId))
+    .unique();
+  const updatedAt = Date.now();
+  if (preferences) {
+    await ctx.db.patch(preferences._id, { preferredLanguage: language, updatedAt });
+  } else {
+    await ctx.db.insert("userPreferences", {
+      userId,
+      preferredLanguage: language,
+      updatedAt,
+    });
+  }
+  return language;
+}
 
 export const claimOwnership = mutation({
   args: {},
@@ -96,24 +127,7 @@ export const setPreferredLanguage = mutation({
   returns: languageValidator,
   handler: async (ctx, args) => {
     const userId = await requireOwner(ctx);
-    const preferences = await ctx.db
-      .query("userPreferences")
-      .withIndex("by_userId", (index) => index.eq("userId", userId))
-      .unique();
-    const updatedAt = Date.now();
-    if (preferences) {
-      await ctx.db.patch(preferences._id, {
-        preferredLanguage: args.language,
-        updatedAt,
-      });
-    } else {
-      await ctx.db.insert("userPreferences", {
-        userId,
-        preferredLanguage: args.language,
-        updatedAt,
-      });
-    }
-    return args.language;
+    return await writePreferredLanguage(ctx, userId, args.language);
   },
 });
 
@@ -151,6 +165,21 @@ export const getPreferredLanguageForOwner = internalQuery({
       .withIndex("by_userId", (index) => index.eq("userId", args.userId))
       .unique();
     return preferences?.preferredLanguage ?? "EN";
+  },
+});
+
+export const setPreferredLanguageForOwner = internalMutation({
+  args: { userId: v.id("users"), language: languageValidator },
+  returns: languageValidator,
+  handler: async (ctx, args) => {
+    const owner = await ctx.db
+      .query("appOwners")
+      .withIndex("by_key", (index) => index.eq("key", ownerKey))
+      .unique();
+    if (owner?.userId !== args.userId) {
+      throw new ConvexError("This lexicon belongs to another account.");
+    }
+    return await writePreferredLanguage(ctx, args.userId, args.language);
   },
 });
 

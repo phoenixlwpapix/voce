@@ -97,7 +97,7 @@ pwsh -ExecutionPolicy Bypass -File .\scripts\generate-pwa-icons.ps1
 
 ## Chrome extension
 
-The unpacked Manifest V3 extension lives in `extension/` and talks only to the production Convex Site endpoint. It supports manual lookup from the toolbar popup and an **Add “selection” to Voce** context-menu action on selected page text. Both entry points strictly use the last language chosen in the popup; selected text never changes the extension language automatically.
+The unpacked Manifest V3 extension lives in `extension/` and talks only to the production Convex Site endpoint. It supports manual lookup from the toolbar popup and an **Add “selection” to Voce** context-menu action on selected page text. The extension reads the account's current learning language when it opens, writes popup language changes back to the same account preference, and refreshes the preference before a context-menu lookup. Selected text never changes the language automatically.
 
 Install and pair it:
 
