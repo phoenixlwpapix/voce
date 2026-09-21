@@ -174,23 +174,6 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="self-end">
-          <div className="mb-3 inline-flex min-h-8 items-center border border-border/70 bg-secondary/40" role="group" aria-label="Lookup direction">
-            <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "chinese" ? "zh-CN" : localeByLanguage[language]}>
-              {mode === "chinese" ? "中文" : language}
-            </span>
-            <button
-              type="button"
-              onClick={() => changeMode(mode === "foreign" ? "chinese" : "foreign")}
-              disabled={submitting}
-              className="flex size-8 shrink-0 items-center justify-center border-x border-border/70 bg-background text-muted-foreground outline-none transition-[color,background-color] hover:bg-secondary hover:text-foreground focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
-              aria-label={`Switch lookup direction to ${mode === "foreign" ? `Chinese to ${languageNames[language]}` : `${languageNames[language]} to Chinese`}`}
-            >
-              <ArrowLeftRight className="size-3.5" aria-hidden="true" />
-            </button>
-            <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "foreign" ? "zh-CN" : localeByLanguage[language]}>
-              {mode === "foreign" ? "中文" : language}
-            </span>
-          </div>
           <fieldset className="mb-3 flex gap-1" disabled={submitting || languageSwitching || !account}>
             <legend className="sr-only">Choose vocabulary language</legend>
             {languages.map((item) => (
@@ -237,6 +220,27 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
               {submitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : mode === "chinese" ? <Languages className="size-4" aria-hidden="true" /> : <ArrowUpRight className="size-4" aria-hidden="true" />}
             </Button>
           </div>
+
+          <div className="mt-3">
+            <div className="inline-flex min-h-8 items-center border border-border/70 bg-secondary/40" role="group" aria-label="Lookup direction">
+              <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "chinese" ? "zh-CN" : localeByLanguage[language]}>
+                {mode === "chinese" ? "中文" : language}
+              </span>
+              <button
+                type="button"
+                onClick={() => changeMode(mode === "foreign" ? "chinese" : "foreign")}
+                disabled={submitting}
+                className="flex size-8 shrink-0 items-center justify-center border-x border-border/70 bg-background text-muted-foreground outline-none transition-[color,background-color] hover:bg-secondary hover:text-foreground focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+                aria-label={`Switch lookup direction to ${mode === "foreign" ? `Chinese to ${languageNames[language]}` : `${languageNames[language]} to Chinese`}`}
+              >
+                <ArrowLeftRight className="size-3.5" aria-hidden="true" />
+              </button>
+              <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "foreign" ? "zh-CN" : localeByLanguage[language]}>
+                {mode === "foreign" ? "中文" : language}
+              </span>
+            </div>
+          </div>
+
           <div className="mt-2 min-h-5 text-left text-xs">
             {error ? <p id="lookup-error" role="alert" className="text-destructive">{error}</p> : null}
           </div>
