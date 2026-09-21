@@ -1,4 +1,5 @@
 import { ConvexError, v } from "convex/values";
+import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import { languageValidator } from "./validators";
 import { requireOwner } from "./ownership";
@@ -6,6 +7,33 @@ import schema from "./schema";
 
 const dayInMilliseconds = 24 * 60 * 60 * 1000;
 const maxWordsPerQuery = 500;
+
+export const getWordsForExport = query({
+  args: {
+    language: v.optional(languageValidator),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(schema.doc("words")),
+  handler: async (ctx, args) => {
+    const ownerId = await requireOwner(ctx);
+    const language = args.language;
+    if (language !== undefined) {
+      return await ctx.db
+        .query("words")
+        .withIndex("by_ownerId_language_createdAt", (index) =>
+          index.eq("ownerId", ownerId).eq("language", language),
+        )
+        .order("desc")
+        .paginate(args.paginationOpts);
+    }
+
+    return await ctx.db
+      .query("words")
+      .withIndex("by_ownerId_createdAt", (index) => index.eq("ownerId", ownerId))
+      .order("desc")
+      .paginate(args.paginationOpts);
+  },
+});
 
 export const getWordsByMonth = query({
   args: { language: languageValidator, monthGroup: v.optional(v.string()) },

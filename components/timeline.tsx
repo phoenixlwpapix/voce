@@ -6,6 +6,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { VocabularyExport } from "@/components/vocabulary-export";
 import { WordRow } from "@/components/word-row";
 import { useSpeech } from "@/hooks/use-speech";
 import { languageNames, localeByLanguage } from "@/lib/constants";
@@ -117,6 +118,7 @@ export function Timeline({ language }: { language: Language }) {
             />
             {filterMonth ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>All</Button> : null}
           </div>
+          <VocabularyExport language={language} />
         </div>
       </div>
 

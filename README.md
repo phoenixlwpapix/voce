@@ -6,6 +6,8 @@ The editorial interface uses English throughout and includes a responsive split-
 
 Each account has one active learning language. New accounts start in English; choosing English, French, Spanish, or Japanese on the home screen saves that preference in Convex, filters the timeline at the query boundary, and restores the same language on the next visit or another device. Review opens directly into all due words for that active language.
 
+The timeline can export the vocabulary collection as a UTF-8 CSV for local use. Export defaults to the active learning language, with an optional all-languages range; the file includes pronunciation, Chinese definitions, grammar notes, examples, and record dates. Export reads the full matching collection through an authorized paginated query rather than being limited to the timeline's first 500 cached entries.
+
 The home lookup supports two explicit directions through one compact language-swap control: the active foreign language and **中文** appear on either side of a central swap button, and clicking it reverses the lookup direction. Foreign-language → Chinese validates and saves vocabulary already written in the active language. Chinese → foreign-language accepts a meaningful Simplified Chinese word or short phrase and asks Gemini for one to three common expressions in the active language. Suggestions are ranked and include concise Chinese meaning and usage distinctions; nothing is stored until the user chooses a candidate, which then passes through the normal strict-language lookup, deduplication, and save flow. An explicit direction avoids confusing Chinese text with Japanese kanji.
 
 Production: https://voce-fawn.vercel.app

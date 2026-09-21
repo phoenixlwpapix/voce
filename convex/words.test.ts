@@ -46,4 +46,21 @@ test("timeline and review queries only return the requested language", async () 
     .toMatchObject([{ language: "EN", word: "hello" }]);
   expect(await signedIn.query(api.words.getReviewQueue, { language: "FR", now: 2 }))
     .toMatchObject([{ language: "FR", word: "bonjour" }]);
+
+  const englishExport = await signedIn.query(api.words.getWordsForExport, {
+    language: "EN",
+    paginationOpts: { cursor: null, numItems: 10 },
+  });
+  expect(englishExport.page).toMatchObject([{ language: "EN", word: "hello" }]);
+  expect(englishExport.isDone).toBe(true);
+
+  const firstExportPage = await signedIn.query(api.words.getWordsForExport, {
+    paginationOpts: { cursor: null, numItems: 1 },
+  });
+  expect(firstExportPage.page).toHaveLength(1);
+  expect(firstExportPage.isDone).toBe(false);
+  const secondExportPage = await signedIn.query(api.words.getWordsForExport, {
+    paginationOpts: { cursor: firstExportPage.continueCursor, numItems: 1 },
+  });
+  expect([...firstExportPage.page, ...secondExportPage.page].map((word) => word.language).sort()).toEqual(["EN", "FR"]);
 });
