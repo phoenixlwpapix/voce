@@ -164,17 +164,17 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
   }
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-5 pb-9 pt-7 sm:px-8 sm:pb-11 sm:pt-9 lg:pb-12 lg:pt-10" aria-labelledby="lookup-title">
-      <div className="grid gap-7 border-b border-border/70 pb-8 sm:pb-9 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(26rem,1.2fr)] lg:items-end lg:gap-16">
+    <section className="mx-auto w-full max-w-5xl px-5 pb-5 pt-4 sm:px-8 sm:pb-9 sm:pt-9 lg:pb-10 lg:pt-10" aria-labelledby="lookup-title">
+      <div className="grid gap-5 border-b border-border/70 pb-5 sm:gap-7 sm:pb-9 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(26rem,1.2fr)] lg:items-end lg:gap-16">
         <div>
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Words worth keeping</p>
-          <h1 id="lookup-title" className="max-w-xl font-serif text-[clamp(2.35rem,6vw,4.25rem)] font-normal leading-[0.94] tracking-[-0.055em]">
+          <p className="mb-3 hidden font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground sm:block">Words worth keeping</p>
+          <h1 id="lookup-title" className="max-w-xl font-serif text-[clamp(1.9rem,8vw,2.75rem)] font-normal leading-[0.98] tracking-[-0.055em] sm:text-[clamp(2.35rem,6vw,4.25rem)] sm:leading-[0.94]">
             What will you<br />remember today?
           </h1>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="self-end">
-          <fieldset className="mb-3 flex gap-1" disabled={submitting || languageSwitching || !account}>
+          <fieldset className="mb-2 flex gap-1 sm:mb-3" disabled={submitting || languageSwitching || !account}>
             <legend className="sr-only">Choose vocabulary language</legend>
             {languages.map((item) => (
               <button
@@ -183,7 +183,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
                 data-active={language === item}
                 onClick={() => onLanguageChange(item)}
                 className={cn(
-                  "min-h-9 border border-transparent px-3 font-mono text-[11px] tracking-[0.16em] text-muted-foreground outline-none transition-[color,background-color,border-color] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:font-medium data-[active=true]:text-foreground motion-reduce:transition-none sm:px-4",
+                  "min-h-10 border border-transparent px-3 font-mono text-[11px] tracking-[0.16em] text-muted-foreground outline-none transition-[color,background-color,border-color] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:font-medium data-[active=true]:text-foreground motion-reduce:transition-none sm:px-4",
                   languagePillClasses[item],
                 )}
                 aria-pressed={language === item}
@@ -194,7 +194,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
             ))}
           </fieldset>
 
-          <div className="relative flex items-center gap-4 border-y border-border/70 py-1.5 transition-colors focus-within:border-foreground motion-reduce:transition-none">
+          <div className="relative flex items-center gap-2 border-y border-border/70 py-1.5 transition-colors focus-within:border-foreground motion-reduce:transition-none sm:gap-4">
             <label htmlFor="word-input" className="sr-only">
               {mode === "chinese" ? `Enter Chinese to find ${languageNames[language]} vocabulary` : `Enter a word in ${languageNames[language]}`}
             </label>
@@ -214,34 +214,25 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
               aria-describedby={error ? "lookup-error" : undefined}
               aria-invalid={Boolean(error)}
               disabled={submitting || languageSwitching}
-              className="border-b-0 font-serif text-xl focus:border-transparent sm:text-2xl"
+              className="min-w-0 flex-1 border-b-0 font-serif text-lg focus:border-transparent sm:text-2xl"
             />
+            <button
+              type="button"
+              onClick={() => changeMode(mode === "foreign" ? "chinese" : "foreign")}
+              disabled={submitting || languageSwitching}
+              className="flex min-h-10 shrink-0 items-center gap-1 border-l border-border/70 px-2 font-mono text-[10px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+              aria-label={`Switch lookup direction to ${mode === "foreign" ? `Chinese to ${languageNames[language]}` : `${languageNames[language]} to Chinese`}`}
+              title="Switch lookup direction"
+            >
+              <span>{mode === "foreign" ? `${language} → 中文` : `中文 → ${language}`}</span>
+              <ArrowLeftRight className="size-3.5" aria-hidden="true" />
+            </button>
             <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting || languageSwitching || !account} aria-label={submitting ? "Looking up" : mode === "chinese" ? "Find vocabulary" : "Look up and save"}>
               {submitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : mode === "chinese" ? <Languages className="size-4" aria-hidden="true" /> : <ArrowUpRight className="size-4" aria-hidden="true" />}
             </Button>
           </div>
 
-          <div className="mt-3">
-            <div className="inline-flex min-h-8 items-center border border-border/70 bg-secondary/40" role="group" aria-label="Lookup direction">
-              <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "chinese" ? "zh-CN" : localeByLanguage[language]}>
-                {mode === "chinese" ? "中文" : language}
-              </span>
-              <button
-                type="button"
-                onClick={() => changeMode(mode === "foreign" ? "chinese" : "foreign")}
-                disabled={submitting}
-                className="flex size-8 shrink-0 items-center justify-center border-x border-border/70 bg-background text-muted-foreground outline-none transition-[color,background-color] hover:bg-secondary hover:text-foreground focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
-                aria-label={`Switch lookup direction to ${mode === "foreign" ? `Chinese to ${languageNames[language]}` : `${languageNames[language]} to Chinese`}`}
-              >
-                <ArrowLeftRight className="size-3.5" aria-hidden="true" />
-              </button>
-              <span className="min-w-12 px-3 text-center font-mono text-[10px] font-medium tracking-[0.12em] text-foreground" lang={mode === "foreign" ? "zh-CN" : localeByLanguage[language]}>
-                {mode === "foreign" ? "中文" : language}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-2 min-h-5 text-left text-xs">
+          <div className="mt-1 min-h-5 text-left text-xs">
             {error ? <p id="lookup-error" role="alert" className="text-destructive">{error}</p> : null}
           </div>
         </form>

@@ -34,7 +34,7 @@ function HomeWorkspaceContent({ initialLanguage }: { initialLanguage: Language }
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader language={language} />
       <main>
         <LookupForm
           language={language}

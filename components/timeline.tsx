@@ -6,7 +6,6 @@ import { useDeferredValue, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { VocabularyExport } from "@/components/vocabulary-export";
 import { WordRow } from "@/components/word-row";
 import { useSpeech } from "@/hooks/use-speech";
 import { languageNames, localeByLanguage } from "@/lib/constants";
@@ -48,6 +47,7 @@ export function Timeline({ language }: { language: Language }) {
   const { words } = useCachedLexicon(language);
   const { available: speechAvailable, speak } = useSpeech();
   const [filterMonth, setFilterMonth] = useState("");
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const { languageWords, visibleWordCount, sections } = useMemo<{
@@ -71,15 +71,15 @@ export function Timeline({ language }: { language: Language }) {
   }, [deferredSearchQuery, filterMonth, language, words]);
   return (
     <section className="mx-auto w-full max-w-5xl px-5 pb-24 sm:px-8 sm:pb-32" aria-labelledby="timeline-title">
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-5 border-b border-border pb-4">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4 sm:mb-7 sm:gap-5">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             Archive · {language} · {searchQuery.trim() || filterMonth ? `${visibleWordCount} of ` : ""}{languageWords.length} words
           </p>
-          <h2 id="timeline-title" className="mt-2 font-serif text-3xl tracking-[-0.03em]">Vocabulary timeline</h2>
+          <h2 id="timeline-title" className="mt-1 font-serif text-[1.75rem] tracking-[-0.03em] sm:mt-2 sm:text-3xl">Vocabulary timeline</h2>
         </div>
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-          <div className="relative w-full sm:w-56">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <div className="relative min-w-0 flex-1 sm:w-56 sm:flex-none">
             <Search className="pointer-events-none absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <label htmlFor="saved-word-search" className="sr-only">Search saved {languageNames[language]} words</label>
             <Input
@@ -105,22 +105,23 @@ export function Timeline({ language }: { language: Language }) {
               </Button>
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="month-filter" className="sr-only">Filter by month</label>
-            <CalendarDays className="size-4 text-muted-foreground" aria-hidden="true" />
-            <input
-              id="month-filter"
-              type="month"
-              lang="en-US"
-              value={filterMonth}
-              onChange={(event) => setFilterMonth(event.target.value)}
-              className="h-10 min-w-0 flex-1 border-0 border-b border-border bg-transparent px-1 font-mono text-xs text-foreground outline-none focus:border-foreground focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
-            />
-            {filterMonth ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>All</Button> : null}
-          </div>
-          <VocabularyExport language={language} />
+          <Button type="button" variant={filterMonth ? "outline" : "ghost"} size="icon" className="size-11 shrink-0" onClick={() => setMonthPickerOpen((open) => !open)} aria-label={filterMonth ? `Filter month: ${formatMonthGroup(filterMonth)}` : "Filter by month"} aria-expanded={monthPickerOpen}>
+            <CalendarDays className="size-4" aria-hidden="true" />
+          </Button>
         </div>
       </div>
+      {monthPickerOpen ? (
+        <div id="month-filter-panel" className="mb-5 flex items-center gap-3 border-b border-border pb-4 sm:justify-end">
+          <label htmlFor="month-filter" className="font-mono text-xs text-muted-foreground">Month</label>
+          <input id="month-filter" type="month" lang="en-US" value={filterMonth} onChange={(event) => setFilterMonth(event.target.value)} className="h-10 min-w-0 flex-1 border border-border bg-background px-2 font-mono text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-48" />
+          {filterMonth ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>Clear</Button> : null}
+        </div>
+      ) : filterMonth ? (
+        <div className="mb-5 flex items-center gap-2 font-mono text-xs text-muted-foreground">
+          <span>Showing {formatMonthGroup(filterMonth)}</span>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>Clear filter</Button>
+        </div>
+      ) : null}
 
       {words === undefined ? (
         <div className="min-h-72 space-y-6 py-6" role="status" aria-label="Loading vocabulary" aria-busy="true">
@@ -156,14 +157,14 @@ export function Timeline({ language }: { language: Language }) {
           </div>
         </div>
       ) : (
-        <div className="space-y-16">
+        <div className="space-y-10 sm:space-y-16">
           {sections.map((section) => (
             <section key={section.monthGroup} aria-labelledby={`month-${section.monthGroup}`}>
-              <div className="mb-1 flex items-baseline justify-between">
+              <div className="sticky top-0 z-20 flex items-baseline justify-between border-b border-foreground/70 bg-background/95 py-2.5 backdrop-blur-sm">
                 <h3 id={`month-${section.monthGroup}`} className="font-mono text-sm tracking-[0.14em]">{formatMonthGroup(section.monthGroup)}</h3>
                 <span className="font-mono text-[10px] text-muted-foreground">{section.words.length.toString().padStart(2, "0")}</span>
               </div>
-              <div className="border-t border-foreground/70">
+              <div>
                 {section.words.map((word) => (
                   <WordRow key={word._id} word={word} speechAvailable={speechAvailable} onSpeak={speak} />
                 ))}

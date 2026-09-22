@@ -16,7 +16,7 @@ import type { Language, WordDocument } from "@/lib/types";
 
 type ExportScope = "current" | "all";
 
-export function VocabularyExport({ language }: { language: Language }) {
+export function VocabularyExport({ language, menuItem = false }: { language: Language; menuItem?: boolean }) {
   const convex = useConvex();
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<ExportScope>("current");
@@ -75,9 +75,9 @@ export function VocabularyExport({ language }: { language: Language }) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm">
-          <Download className="size-3.5" aria-hidden="true" />
-          Export
+        <Button type="button" variant={menuItem ? "ghost" : "outline"} size={menuItem ? "default" : "sm"} className={menuItem ? "w-full justify-start px-3 text-sm" : undefined}>
+          <Download className="size-4" aria-hidden="true" />
+          Export vocabulary
         </Button>
       </DialogTrigger>
       <DialogContent>
