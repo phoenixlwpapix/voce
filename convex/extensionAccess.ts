@@ -1,8 +1,21 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { requireOwner } from "./ownership";
+import type { Id } from "./_generated/dataModel";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
 
-const accessKey = "primary" as const;
+async function isActiveUser(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
+  const member = await ctx.db.query("appUsers")
+    .withIndex("by_userId", (q) => q.eq("userId", userId)).unique();
+  if (member) return member.status === "active";
+  const owner = await ctx.db.query("appOwners")
+    .withIndex("by_userId", (q) => q.eq("userId", userId)).unique();
+  return owner !== null;
+}
+
+async function assertActiveUser(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
+  if (!(await isActiveUser(ctx, userId))) throw new ConvexError("Account access required.");
+}
 
 const deviceValidator = v.object({
   id: v.union(v.id("extensionDevices"), v.literal("legacy")),
@@ -17,7 +30,7 @@ export const listDevices = query({
     const ownerId = await requireOwner(ctx);
     const access = await ctx.db
       .query("extensionAccess")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
+      .withIndex("by_ownerId", (index) => index.eq("ownerId", ownerId))
       .unique();
     if (access && access.ownerId !== ownerId) {
       throw new ConvexError("This lexicon belongs to another account.");
@@ -65,7 +78,7 @@ export const revoke = mutation({
 
     const access = await ctx.db
       .query("extensionAccess")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
+      .withIndex("by_ownerId", (index) => index.eq("ownerId", ownerId))
       .unique();
     if (!access) return null;
     if (access.ownerId !== ownerId) {
@@ -89,17 +102,11 @@ export const storePairingCode = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const owner = await ctx.db
-      .query("appOwners")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
-      .unique();
-    if (owner?.userId !== args.ownerId) {
-      throw new ConvexError("This lexicon belongs to another account.");
-    }
+    await assertActiveUser(ctx, args.ownerId);
 
     const access = await ctx.db
       .query("extensionAccess")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
+      .withIndex("by_ownerId", (index) => index.eq("ownerId", args.ownerId))
       .unique();
     const now = Date.now();
     if (access) {
@@ -113,7 +120,7 @@ export const storePairingCode = internalMutation({
       });
     } else {
       await ctx.db.insert("extensionAccess", {
-        key: accessKey,
+        key: args.ownerId,
         ownerId: args.ownerId,
         pairingCodeHash: args.codeHash,
         pairingExpiresAt: args.expiresAt,
@@ -138,7 +145,7 @@ export const activateToken = internalMutation({
   handler: async (ctx, args) => {
     const access = await ctx.db
       .query("extensionAccess")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
+      .withIndex("by_pairingCodeHash", (index) => index.eq("pairingCodeHash", args.codeHash))
       .unique();
     if (
       !access ||
@@ -148,11 +155,7 @@ export const activateToken = internalMutation({
     ) {
       return false;
     }
-    const owner = await ctx.db
-      .query("appOwners")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
-      .unique();
-    if (owner?.userId !== access.ownerId) return false;
+    if (!(await isActiveUser(ctx, access.ownerId))) return false;
 
     const device = await ctx.db
       .query("extensionDevices")
@@ -195,22 +198,14 @@ export const authenticateToken = internalQuery({
       .withIndex("by_tokenHash", (index) => index.eq("tokenHash", args.tokenHash))
       .unique();
     if (device) {
-      const owner = await ctx.db
-        .query("appOwners")
-        .withIndex("by_key", (index) => index.eq("key", accessKey))
-        .unique();
-      return owner?.userId === device.ownerId ? device.ownerId : null;
+      return (await isActiveUser(ctx, device.ownerId)) ? device.ownerId : null;
     }
 
     const access = await ctx.db
       .query("extensionAccess")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
+      .withIndex("by_tokenHash", (index) => index.eq("tokenHash", args.tokenHash))
       .unique();
     if (!access?.tokenHash || access.tokenHash !== args.tokenHash) return null;
-    const owner = await ctx.db
-      .query("appOwners")
-      .withIndex("by_key", (index) => index.eq("key", accessKey))
-      .unique();
-    return owner?.userId === access.ownerId ? access.ownerId : null;
+    return (await isActiveUser(ctx, access.ownerId)) ? access.ownerId : null;
   },
 });

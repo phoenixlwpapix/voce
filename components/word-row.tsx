@@ -130,7 +130,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4 text-[10px] text-muted-foreground sm:col-span-2">
-              <p className="font-mono tracking-[0.08em]">Added {formatRecordDate(word.createdAt)}{word.updatedAt > word.createdAt + 1000 ? ` · Updated ${formatRecordDate(word.updatedAt)}` : ""}</p>
+              <p className="font-mono tracking-[0.08em]">Added {formatRecordDate(word.createdAt)}{word.lastReviewedAt ? ` · Reviewed ${formatRecordDate(word.lastReviewedAt)}` : ""}</p>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button type="button" variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">

@@ -9,6 +9,7 @@ import {
   mutation,
   query,
   type MutationCtx,
+  type QueryCtx,
 } from "./_generated/server";
 import { requireOwner } from "./ownership";
 import { languageValidator } from "./validators";
@@ -17,6 +18,18 @@ import type { Infer } from "convex/values";
 const ownerKey = "primary" as const;
 const migrationBatchSize = 100;
 type Language = Infer<typeof languageValidator>;
+
+async function assertActiveUser(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
+  const member = await ctx.db.query("appUsers")
+    .withIndex("by_userId", (index) => index.eq("userId", userId)).unique();
+  if (member) {
+    if (member.status !== "active") throw new ConvexError("This account is suspended.");
+    return;
+  }
+  const owner = await ctx.db.query("appOwners")
+    .withIndex("by_userId", (index) => index.eq("userId", userId)).unique();
+  if (!owner) throw new ConvexError("This account has not been invited.");
+}
 
 async function writePreferredLanguage(
   ctx: MutationCtx,
@@ -77,6 +90,13 @@ export const claimOwnership = mutation({
         updatedAt: Date.now(),
       });
     }
+    const appUser = await ctx.db.query("appUsers")
+      .withIndex("by_userId", (index) => index.eq("userId", userId)).unique();
+    if (!appUser) {
+      await ctx.db.insert("appUsers", {
+        userId, role: "admin", status: "active", joinedAt: Date.now(),
+      });
+    }
 
     if (!owner) {
       await ctx.scheduler.runAfter(0, internal.account.claimLegacyWords, { userId });
@@ -92,32 +112,38 @@ export const session = query({
   returns: v.union(
     v.object({ status: v.literal("denied") }),
     v.object({ status: v.literal("setup") }),
+    v.object({ status: v.literal("invitationRequired") }),
     v.object({
       status: v.literal("ready"),
       userId: v.id("users"),
       email: v.union(v.string(), v.null()),
       preferredLanguage: languageValidator,
+      role: v.union(v.literal("admin"), v.literal("member")),
     }),
   ),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     const userId = await getAuthUserId(ctx);
     if (!userId || identity?.subject !== args.subject) return { status: "denied" as const };
-    const [user, owner, preferences] = await Promise.all([
+    const [user, owner, preferences, appUser] = await Promise.all([
       ctx.db.get(userId),
       ctx.db.query("appOwners").withIndex("by_key", (q) => q.eq("key", ownerKey)).unique(),
       ctx.db.query("userPreferences").withIndex("by_userId", (q) => q.eq("userId", userId)).unique(),
+      ctx.db.query("appUsers").withIndex("by_userId", (q) => q.eq("userId", userId)).unique(),
     ]);
-    if (user?.email?.trim().toLowerCase() !== env.APP_OWNER_EMAIL.trim().toLowerCase()) {
-      return { status: "denied" as const };
+    if (appUser?.status === "suspended") return { status: "denied" as const };
+    const isLegacyOwner = owner?.userId === userId;
+    if (!appUser && !isLegacyOwner) {
+      return user?.email?.trim().toLowerCase() === env.APP_OWNER_EMAIL.trim().toLowerCase() && !owner
+        ? { status: "setup" as const }
+        : { status: "invitationRequired" as const };
     }
-    if (!owner) return { status: "setup" as const };
-    if (owner.userId !== userId) return { status: "denied" as const };
     return {
       status: "ready" as const,
       userId,
-      email: user.email ?? null,
+      email: user?.email ?? null,
       preferredLanguage: preferences?.preferredLanguage ?? "EN",
+      role: appUser?.role ?? "admin",
     };
   },
 });
@@ -145,13 +171,7 @@ export const assertOwner = internalQuery({
   args: { userId: v.id("users") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const owner = await ctx.db
-      .query("appOwners")
-      .withIndex("by_key", (index) => index.eq("key", ownerKey))
-      .unique();
-    if (owner?.userId !== args.userId) {
-      throw new ConvexError("This lexicon belongs to another account.");
-    }
+    await assertActiveUser(ctx, args.userId);
     return null;
   },
 });
@@ -160,6 +180,7 @@ export const getPreferredLanguageForOwner = internalQuery({
   args: { userId: v.id("users") },
   returns: languageValidator,
   handler: async (ctx, args) => {
+    await assertActiveUser(ctx, args.userId);
     const preferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_userId", (index) => index.eq("userId", args.userId))
@@ -172,13 +193,7 @@ export const setPreferredLanguageForOwner = internalMutation({
   args: { userId: v.id("users"), language: languageValidator },
   returns: languageValidator,
   handler: async (ctx, args) => {
-    const owner = await ctx.db
-      .query("appOwners")
-      .withIndex("by_key", (index) => index.eq("key", ownerKey))
-      .unique();
-    if (owner?.userId !== args.userId) {
-      throw new ConvexError("This lexicon belongs to another account.");
-    }
+    await assertActiveUser(ctx, args.userId);
     return await writePreferredLanguage(ctx, args.userId, args.language);
   },
 });

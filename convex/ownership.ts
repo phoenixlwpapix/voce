@@ -11,14 +11,15 @@ export async function requireOwner(ctx: OwnershipCtx): Promise<Id<"users">> {
     throw new ConvexError("Please sign in to continue.");
   }
 
-  const owner = await ctx.db
-    .query("appOwners")
-    .withIndex("by_key", (index) => index.eq("key", "primary"))
-    .unique();
-
-  if (owner?.userId !== userId) {
-    throw new ConvexError("This lexicon belongs to another account.");
+  const member = await ctx.db.query("appUsers")
+    .withIndex("by_userId", (index) => index.eq("userId", userId)).unique();
+  if (member) {
+    if (member.status !== "active") throw new ConvexError("This account is suspended.");
+    return userId;
   }
+  const owner = await ctx.db.query("appOwners")
+    .withIndex("by_userId", (index) => index.eq("userId", userId)).unique();
+  if (!owner) throw new ConvexError("This account has not been invited.");
 
   return userId;
 }

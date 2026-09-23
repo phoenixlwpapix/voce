@@ -14,6 +14,8 @@ import type * as extensionAccess from "../extensionAccess.js";
 import type * as extensionAuth from "../extensionAuth.js";
 import type * as http from "../http.js";
 import type * as internalWords from "../internalWords.js";
+import type * as invitationActions from "../invitationActions.js";
+import type * as invitations from "../invitations.js";
 import type * as lookup from "../lookup.js";
 import type * as lookupCore from "../lookupCore.js";
 import type * as normalization from "../normalization.js";
@@ -35,6 +37,8 @@ declare const fullApi: ApiFromModules<{
   extensionAuth: typeof extensionAuth;
   http: typeof http;
   internalWords: typeof internalWords;
+  invitationActions: typeof invitationActions;
+  invitations: typeof invitations;
   lookup: typeof lookup;
   lookupCore: typeof lookupCore;
   normalization: typeof normalization;

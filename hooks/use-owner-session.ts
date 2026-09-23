@@ -8,6 +8,7 @@ export type OwnerSession = {
   userId: Id<"users">;
   email: string | null;
   preferredLanguage: Language;
+  role: "admin" | "member";
 };
 export const OwnerSessionContext = createContext<OwnerSession | null>(null);
 export const SignOutContext = createContext<(() => Promise<void>) | null>(null);

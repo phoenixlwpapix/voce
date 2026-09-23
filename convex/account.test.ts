@@ -18,11 +18,11 @@ async function setup() {
   return { t, owner, other, subject, signedIn: t.withIdentity({ subject }) };
 }
 
-test("unauthenticated and non-allowlisted accounts cannot read or initialize", async () => {
+test("unauthenticated and uninvited accounts cannot read or initialize", async () => {
   const { t, other, subject } = await setup();
   expect(await t.query(api.account.session, { subject })).toEqual({ status: "denied" });
   const denied = t.withIdentity({ subject: `${other}|session` });
-  expect(await denied.query(api.account.session, { subject: `${other}|session` })).toEqual({ status: "denied" });
+  expect(await denied.query(api.account.session, { subject: `${other}|session` })).toEqual({ status: "invitationRequired" });
   await expect(denied.mutation(api.account.claimOwnership)).rejects.toThrow();
   await expect(denied.query(api.words.getWordsByMonth, { language: "EN" })).rejects.toThrow();
 });

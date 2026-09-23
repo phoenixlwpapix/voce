@@ -30,6 +30,24 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_userId", ["userId"]),
+  appUsers: defineTable({
+    userId: v.id("users"),
+    role: v.union(v.literal("admin"), v.literal("member")),
+    status: v.union(v.literal("active"), v.literal("suspended")),
+    invitedBy: v.optional(v.id("users")),
+    joinedAt: v.number(),
+  }).index("by_userId", ["userId"]),
+  invitations: defineTable({
+    tokenHash: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    acceptedBy: v.optional(v.id("users")),
+    acceptedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_createdBy_and_createdAt", ["createdBy", "createdAt"]),
   userPreferences: defineTable({
     userId: v.id("users"),
     preferredLanguage: v.union(
@@ -41,14 +59,18 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_userId", ["userId"]),
   extensionAccess: defineTable({
-    key: v.literal("primary"),
+    key: v.string(),
     ownerId: v.id("users"),
     pairingCodeHash: v.union(v.string(), v.null()),
     pairingExpiresAt: v.union(v.number(), v.null()),
     tokenHash: v.union(v.string(), v.null()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_key", ["key"]),
+  })
+    .index("by_key", ["key"])
+    .index("by_ownerId", ["ownerId"])
+    .index("by_pairingCodeHash", ["pairingCodeHash"])
+    .index("by_tokenHash", ["tokenHash"]),
   extensionDevices: defineTable({
     ownerId: v.id("users"),
     deviceId: v.string(),

@@ -3,7 +3,7 @@
 import { useContext, useEffect, useRef } from "react";
 import { SignOutContext, useOwnerSession } from "@/hooks/use-owner-session";
 import Link from "next/link";
-import { BookOpenText, LogOut, Puzzle, Settings2 } from "lucide-react";
+import { BookOpenText, LogOut, Puzzle, Settings2, UserPlus } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { VocabularyExport } from "@/components/vocabulary-export";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,7 @@ export function SiteHeader({ language }: { language?: Language }) {
             <Link href="/extension" onClick={closeMenu} className="flex min-h-11 items-center gap-3 px-3 text-sm outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
               <Puzzle className="size-4" aria-hidden="true" /> Extension setup
             </Link>
+            {account?.role === "admin" ? <Link href="/invitations" onClick={closeMenu} className="flex min-h-11 items-center gap-3 px-3 text-sm outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"><UserPlus className="size-4" aria-hidden="true" /> Invite people</Link> : null}
             <div onClick={closeMenu}><ThemeToggle showLabel /></div>
             <div onClick={closeMenu}><VocabularyExport language={language ?? account?.preferredLanguage ?? "EN"} menuItem /></div>
             <div className="my-1 border-t border-border" />

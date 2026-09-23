@@ -1,6 +1,6 @@
 # Voce
 
-Voce is a quiet, single-user multilingual vocabulary notebook for collecting and reviewing English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams the collection in real time, a deterministic two-button scheduler powers review, and a private Chrome companion saves words from any page.
+Voce is a quiet, invitation-only multilingual vocabulary notebook where each account collects and reviews its own English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams each collection in real time, a deterministic two-button scheduler powers review, and a private Chrome companion saves words from any page.
 
 The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view keeps Review in the masthead and groups extension setup, appearance, CSV export, and sign-out in Settings on both phone and desktop. On phones, the heading and lookup form use less vertical space, lookup direction sits beside the input, and timeline search and month filtering share a row so the newest word and its Chinese meaning appear sooner. Month and count headings remain visible while scrolling each month's entries, until the next month takes over. Each vocabulary row toggles its full learning details when clicked or activated from the keyboard, while its pronunciation control remains independent. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
@@ -16,7 +16,7 @@ Production: https://voce-fawn.vercel.app
 
 - Next.js 16, React 19, TypeScript strict mode, App Router
 - Convex database, queries, mutations, and Node actions
-- Convex Auth email/password sessions with a single-owner authorization boundary
+- Convex Auth email/password sessions with invitation-based per-user authorization
 - Gemini `gemini-3.5-flash-lite` through the official `@google/genai` SDK
 - Tailwind CSS v4 and accessible Radix/shadcn-style primitives
 - Zod validation, Lucide icons, Sonner notifications
@@ -61,7 +61,7 @@ Convex Auth also needs `JWT_PRIVATE_KEY`, `JWKS`, and `SITE_URL` on every deploy
 | --- | --- | --- |
 | `NEXT_PUBLIC_CONVEX_URL` | Browser | URL of the connected Convex deployment |
 | `GEMINI_API_KEY` | Convex action | Server-only Gemini credential |
-| `APP_OWNER_EMAIL` | Convex functions | Only email allowed to claim and use the personal notebook |
+| `APP_OWNER_EMAIL` | Convex functions | Email allowed to bootstrap the first admin account |
 | `JWT_PRIVATE_KEY` | Convex Auth | Server-only session signing private key |
 | `JWKS` | Convex Auth | Public key set used to verify sessions |
 | `SITE_URL` | Convex Auth | Public frontend origin, such as `https://voce-fawn.vercel.app` |
@@ -120,9 +120,9 @@ If the production Convex deployment name changes, update both `host_permissions`
 
 ## First account
 
-Choose **Create account** on the login screen and register with the email configured as `APP_OWNER_EMAIL` and a password of at least eight characters. That account becomes the only owner of this personal notebook. Existing words are assigned to it automatically in batches.
+Choose **Create account** on the login screen and register with the email configured as `APP_OWNER_EMAIL` and a password of at least eight characters. That account becomes the admin. Existing words are assigned to it automatically in batches.
 
-Later accounts may authenticate but cannot read, edit, delete, review, or create words, and are rejected before a Gemini request is made. Create the owner account before exposing a new deployment publicly.
+To invite a friend, open **Settings → Invite people**, generate a link, and send it privately. Each link can be redeemed once within seven days. The recipient opens it, creates an account (or signs in), and receives a separate personal lexicon. The full link is displayed only when generated; unused invitations can be revoked from the same page. Accounts without a redeemed invitation can authenticate but cannot access words or Gemini actions. The admin's existing data stays with the original account.
 
 ## Verification and production build
 
@@ -143,7 +143,7 @@ Start the compiled application with `pnpm start`.
 
 The live production backend for this project is `grateful-caterpillar-393` at `https://grateful-caterpillar-393.convex.cloud`. The Vercel project is connected to the private `phoenixlwpapix/voce` GitHub repository and deploys from `main`.
 
-The Gemini and JWT private keys must never be configured as public Next.js environment variables. Authentication is paired with server-side single-owner authorization: hiding the UI alone is not treated as protection.
+The Gemini and JWT private keys must never be configured as public Next.js environment variables. Authentication is paired with server-side per-user authorization; every word, preference, and extension connection is scoped to the active user.
 
 ## Review shortcuts
 
@@ -163,7 +163,7 @@ Generated pronunciation is stored as IPA for English, French, and Spanish, and a
 
 ## Cache-first timeline
 
-After authentication, the home shell appears while a read-only session query verifies the owner. Only an unclaimed, allowlisted account runs `claimOwnership`; legacy migration is scheduled when the owner is first created, not on every visit. All existing `requireOwner` checks remain enforced. The header shares the verified session instead of fetching the account again.
+After authentication, the home shell appears while a read-only session query verifies the user. Only the first admin account runs `claimOwnership`; legacy migration is scheduled when it is first created, not on every visit. Invited accounts are activated by redeeming their link and start with an empty lexicon. Server checks enforce account status and per-user ownership. The header shares the verified session instead of fetching the account again.
 
 Once the server confirms the user, the timeline starts IndexedDB reading and its existing reactive Convex query in parallel. Cached words render while the live result is pending; live results (including an empty list) always win and update the cache automatically. Only the vocabulary region shows skeletons on a cache miss. The existing 500-word query limit also applies to this cache; it is not a backup of the entire database.
 
@@ -186,8 +186,8 @@ Run `pnpm test` for IndexedDB isolation/corruption/failure tests and Convex init
 - A matching existing entry in the selected language still returns without an AI call. Historical misclassified entries are not automatically reanalyzed or migrated. AI validation is not deterministic dictionary verification; tests mock generation to verify strict-language write gating and duplicate/progress preservation.
 
 - Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
-- All vocabulary queries, mutations, review updates, and Gemini actions require the authenticated app owner; duplicates are scoped to that owner.
-- Extension requests authenticate with a single revocable token minted from an owner-only, one-time pairing code; raw pairing codes and tokens are never stored in Convex.
+- All vocabulary queries, mutations, review updates, and Gemini actions require an active account; duplicates are scoped to that account.
+- Extension requests authenticate with a revocable token minted from that account's one-time pairing code; raw pairing codes and tokens are never stored in Convex.
 - Duplicate lookups return the existing entry before calling Gemini, leaving its generated content, review progress, and original month unchanged.
 - The home timeline and review queue both follow the persisted active learning language. Vocabulary and due-review queries filter by that language on the server; the timeline can instantly search its loaded entries by word, pronunciation, infinitive, grammar note, part of speech, or Chinese definition.
 - Gemini output is constrained by a JSON schema and validated again with Zod before any write.

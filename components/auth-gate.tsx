@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthActions, useAuthToken, useConvexAuth } from "@convex-dev/auth/react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowRight, KeyRound, LoaderCircle, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -29,9 +29,9 @@ function LoadingScreen({ label }: { label: string }) {
   );
 }
 
-function SignInScreen() {
+function SignInScreen({ invited }: { invited: boolean }) {
   const { signIn } = useAuthActions();
-  const [mode, setMode] = useState<AuthMode>("signIn");
+  const [mode, setMode] = useState<AuthMode>(invited ? "signUp" : "signIn");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,7 +131,7 @@ function SignInScreen() {
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
             {mode === "signIn"
               ? "Sign in to keep collecting and reviewing your words."
-              : "The first account created becomes the sole owner of this lexicon."}
+              : invited ? "Create an account to accept your invitation and start your own lexicon." : "Create an account to get started with Voce."}
           </p>
 
           <div className="mt-10 grid grid-cols-2 border-y border-border" role="tablist" aria-label="Account options">
@@ -245,10 +245,29 @@ function AccountSetup() {
   );
 }
 
-function SessionGate({ children, subject, signOut }: {
+function InvitationAcceptance({ token }: { token: string }) {
+  const accept = useAction(api.invitationActions.accept);
+  const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    void accept({ token }).then(() => window.location.replace("/"))
+      .catch(() => setError("This invitation is invalid, expired, or already used. Ask for a new link."));
+  }, [accept, token]);
+  return <main className="grid min-h-dvh place-items-center px-5 text-center">
+    <div className="max-w-md border-y border-border py-14">
+      <h1 className="font-serif text-4xl">Joining Voce</h1>
+      <p className="mt-4 text-sm text-muted-foreground">{error ?? "Preparing your personal lexicon…"}</p>
+    </div>
+  </main>;
+}
+
+function SessionGate({ children, subject, signOut, inviteToken }: {
   children: React.ReactNode;
   subject: string;
   signOut: () => Promise<void>;
+  inviteToken: string | null;
 }) {
   const session = useQuery(api.account.session, { subject });
   const pathname = usePathname();
@@ -262,6 +281,10 @@ function SessionGate({ children, subject, signOut }: {
       : <LoadingScreen label="Checking your account…" />;
   }
   if (session.status === "setup") return <AccountSetup />;
+  if (session.status === "invitationRequired" && inviteToken) return <InvitationAcceptance token={inviteToken} />;
+  if (session.status === "invitationRequired") {
+    return <main className="grid min-h-dvh place-items-center px-5 text-center"><div className="max-w-md border-y border-border py-14"><LockKeyhole className="mx-auto size-5 text-muted-foreground" aria-hidden="true" /><h1 className="mt-6 font-serif text-4xl">Invitation required</h1><p className="mt-4 text-sm text-muted-foreground">Ask the person who invited you for a Voce link, then open it while signed in.</p><Button variant="outline" className="mt-8" onClick={() => void signOut()}>Sign out</Button></div></main>;
+  }
   if (session.status === "denied") {
     return (
       <main className="grid min-h-dvh place-items-center px-5 text-center">
@@ -281,6 +304,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
   const token = useAuthToken();
+  const pathname = usePathname();
+  const inviteToken = pathname?.startsWith("/join/") ? pathname.slice("/join/".length) : null;
   const [signingOut, setSigningOut] = useState(false);
   let subject: string | undefined;
   try {
@@ -303,10 +328,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }
   if (signingOut) return <LoadingScreen label="Signing out…" />;
   if (isLoading) return <LoadingScreen label="Checking your session…" />;
-  if (!isAuthenticated || !subject) return <SignInScreen />;
+  if (!isAuthenticated || !subject) return <SignInScreen key={inviteToken ?? "regular"} invited={Boolean(inviteToken)} />;
   return (
     <SignOutContext value={handleSignOut}>
-      <SessionGate key={subject} subject={subject} signOut={handleSignOut}>{children}</SessionGate>
+      <SessionGate key={subject} subject={subject} signOut={handleSignOut} inviteToken={inviteToken}>{children}</SessionGate>
     </SignOutContext>
   );
 }
