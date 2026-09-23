@@ -10,7 +10,7 @@ export const findExistingWord = internalQuery({
     normalizedWord: v.string(),
   },
   returns: v.union(
-    v.object({ id: v.id("words"), word: v.string() }),
+    v.object({ id: v.id("words"), word: v.string(), baseForm: v.optional(v.string()), meaningZh: v.optional(v.string()) }),
     v.null(),
   ),
   handler: async (ctx, args) => {
@@ -24,7 +24,12 @@ export const findExistingWord = internalQuery({
       )
       .unique();
 
-    return existing === null ? null : { id: existing._id, word: existing.word };
+    return existing === null ? null : {
+      id: existing._id,
+      word: existing.word,
+      baseForm: existing.grammar?.baseForm ?? existing.grammar?.infinitive,
+      meaningZh: existing.definitions[0]?.meaningZh,
+    };
   },
 });
 

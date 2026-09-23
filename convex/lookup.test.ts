@@ -191,19 +191,93 @@ test("a silent same-language spelling correction still requires confirmation", a
   })).status).toBe("needs_confirmation");
 });
 
-test("a valid Spanish conjugation is saved under Spanish", async () => {
+test("a valid Spanish reflexive conjugation offers its infinitive before saving", async () => {
   const t = await setup();
   await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
   generateContent.mockResolvedValue({ text: JSON.stringify({
     ...spanishVocabulary,
-    word: "hablamos",
-    grammar: { infinitive: "hablar" },
+    word: "me quejo",
+    grammar: { infinitive: "quejarse", baseForm: "quejarse" },
   }) });
-  expect((await t.action(api.lookup.lookupAndSave, {
-    inputWord: "hablamos",
+  expect(await t.action(api.lookup.lookupAndSave, {
+    inputWord: "me quejo",
     language: "ES",
     monthGroup: "2026-09",
+  })).toMatchObject({ status: "form_choice", baseForm: "quejarse" });
+  expect(await t.query(api.words.getWordsByMonth, { language: "ES" })).toEqual([]);
+
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "me quejo",
+    language: "ES",
+    monthGroup: "2026-09",
+    saveInflected: true,
   })).status).toBe("created");
+  expect((await t.query(api.words.getWordsByMonth, { language: "ES" }))[0].grammar?.baseForm).toBe("quejarse");
+  generateContent.mockClear();
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "me quejo", language: "ES", monthGroup: "2026-09",
+  })).status).toBe("form_choice");
+  expect(generateContent).not.toHaveBeenCalled();
+});
+
+test("choosing an already saved base form returns the existing entry without changing review progress", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    ...spanishVocabulary,
+    word: "quejarse",
+    definitions: [{ partOfSpeech: "verb", meaningZh: "抱怨" }],
+  }) });
+  const saved = await t.action(api.lookup.lookupAndSave, {
+    inputWord: "quejarse", language: "ES", monthGroup: "2026-08",
+  });
+  if (saved.status !== "created") throw new Error("Expected a saved base form");
+  await t.mutation(api.words.updateReviewState, { id: saved.id, outcome: "remembered" });
+
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    ...spanishVocabulary,
+    word: "me quejo",
+    grammar: { infinitive: "quejarse", baseForm: "quejarse" },
+  }) });
+  expect(await t.action(api.lookup.lookupAndSave, {
+    inputWord: "me quejo", language: "ES", monthGroup: "2026-09",
+  })).toMatchObject({ status: "form_choice", baseForm: "quejarse" });
+
+  generateContent.mockClear();
+  expect(await t.action(api.lookup.lookupAndSave, {
+    inputWord: "quejarse", language: "ES", monthGroup: "2026-09",
+  })).toMatchObject({ status: "existing", id: saved.id, word: "quejarse" });
+  expect(generateContent).not.toHaveBeenCalled();
+  const words = await t.query(api.words.getWordsByMonth, { language: "ES" });
+  expect(words).toHaveLength(1);
+  expect(words[0]).toMatchObject({ _id: saved.id, repetitions: 1, monthGroup: "2026-08" });
+});
+
+test("an English plural offers its singular and can save the singular", async () => {
+  const t = await setup();
+  const plural = {
+    status: "valid", language: "EN", word: "children", phonetic: "ˈtʃɪldrən",
+    definitions: [{ partOfSpeech: "noun", meaningZh: "孩子们" }],
+    grammar: { baseForm: "child" },
+    examples: [
+      { target: "The children are playing.", translationZh: "孩子们正在玩。" },
+      { target: "The children are here.", translationZh: "孩子们在这里。" },
+    ],
+  };
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify(plural) });
+  expect(await t.action(api.lookup.lookupAndSave, {
+    inputWord: "children", language: "EN", monthGroup: "2026-09",
+  })).toMatchObject({ status: "form_choice", baseForm: "child" });
+  expect(await t.query(api.words.getWordsByMonth, { language: "EN" })).toEqual([]);
+
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    ...plural, word: "child", phonetic: "tʃaɪld", grammar: undefined,
+  }) });
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "child", language: "EN", monthGroup: "2026-09",
+  })).status).toBe("created");
+  const words = await t.query(api.words.getWordsByMonth, { language: "EN" });
+  expect(words.map((word) => word.word)).toEqual(["child"]);
 });
 
 test("the web lookup rejects a language that is not the saved preference", async () => {

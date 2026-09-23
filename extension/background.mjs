@@ -44,9 +44,11 @@ async function addSelection(selectionText) {
   await setBadge("…", `Adding ${word} to Voce`);
   try {
     const result = await lookupWord(word, language);
-    if (result.status === "needs_confirmation" || result.status === "invalid") {
+    if (result.status === "needs_confirmation" || result.status === "form_choice" || result.status === "invalid") {
       const hint = result.status === "needs_confirmation"
         ? `Did you mean ${result.suggestions.map((candidate) => candidate.word).join(" / ")}?`
+        : result.status === "form_choice"
+          ? `Dictionary form: ${result.baseForm}.`
         : "Check the spelling.";
       await setBadge("?", `Nothing saved. ${hint} Open the popup to look up the correct word.`, "#a33f35");
       return;

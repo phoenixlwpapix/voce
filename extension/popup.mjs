@@ -121,11 +121,11 @@ pairingForm.addEventListener("submit", (event) => {
     .finally(() => setBusy(pairingSubmit, false, ""));
 });
 
-function submitLookup(word, requestedLanguage) {
+function submitLookup(word, requestedLanguage, saveInflected = false) {
   if (lookupSubmit.disabled) return;
   setBusy(lookupSubmit, true, "…");
   setMessage(lookupMessage, "Looking up and saving…");
-  void lookupWord(word, requestedLanguage)
+  void lookupWord(word, requestedLanguage, saveInflected)
     .then((result) => {
       if (result.status === "invalid") {
         setMessage(lookupMessage, `Couldn't find this word in ${languageNames[requestedLanguage]}. Check the spelling.`, true);
@@ -148,6 +148,23 @@ function submitLookup(word, requestedLanguage) {
         edit.textContent = "Back to editing";
         edit.addEventListener("click", () => { setMessage(lookupMessage, ""); wordInput.focus(); });
         lookupMessage.append(edit);
+        return;
+      }
+      if (result.status === "form_choice") {
+        setMessage(lookupMessage, `“${result.inputWord}” is a valid form of “${result.baseForm}”. Nothing saved yet.`);
+        const meaning = document.createElement("p");
+        meaning.textContent = result.meaningZh;
+        lookupMessage.append(meaning);
+        for (const [label, selectedWord, keepForm] of [
+          [`Save dictionary form · ${result.baseForm}`, result.baseForm, false],
+          [`Save this form · ${result.inputWord}`, result.inputWord, true],
+        ]) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = label;
+          button.addEventListener("click", () => submitLookup(selectedWord, result.language, keepForm));
+          lookupMessage.append(button);
+        }
         return;
       }
       const message = result.status === "created"

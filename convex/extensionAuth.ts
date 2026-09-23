@@ -80,6 +80,7 @@ export const lookupFromExtension = internalAction({
     inputWord: v.string(),
     language: languageValidator,
     monthGroup: v.string(),
+    saveInflected: v.optional(v.boolean()),
   },
   returns: v.union(
     v.object({
@@ -106,6 +107,7 @@ export const lookupFromExtension = internalAction({
       inputWord: args.inputWord,
       language: args.language,
       monthGroup: args.monthGroup,
+      saveInflected: args.saveInflected,
     });
     return { ok: true as const, result };
   },

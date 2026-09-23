@@ -12,6 +12,7 @@ const grammar = v.object({
     v.union(v.literal("masculine"), v.literal("feminine"), v.literal("neutral")),
   ),
   infinitive: v.optional(v.string()),
+  baseForm: v.optional(v.string()),
   noteZh: v.optional(v.string()),
 });
 

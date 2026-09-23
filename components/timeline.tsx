@@ -35,6 +35,7 @@ function matchesSearch(word: WordDocument, query: string, language: Language) {
     word.inputWord,
     word.phonetic,
     word.grammar?.infinitive,
+    word.grammar?.baseForm,
     word.grammar?.noteZh,
     ...word.definitions.flatMap((definition) => [definition.partOfSpeech, definition.meaningZh]),
   ];

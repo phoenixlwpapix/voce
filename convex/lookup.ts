@@ -13,6 +13,7 @@ export const lookupAndSave = action({
     inputWord: v.string(),
     language: languageValidator,
     monthGroup: v.string(),
+    saveInflected: v.optional(v.boolean()),
   },
   returns: lookupActionResultValidator,
   handler: async (ctx, args) => {

@@ -25,6 +25,12 @@ describe("vocabulary CSV export", () => {
     expect(csv).toContain('"\'=HYPERLINK(""bad"")"');
   });
 
+  it("includes the base form for an inflected entry", () => {
+    const csv = createVocabularyCsv([{ ...word, word: "children", grammar: { baseForm: "child" } }]);
+    expect(csv).toContain('"Base form"');
+    expect(csv).toContain('"child"');
+  });
+
   it("creates a stable dated filename", () => {
     expect(vocabularyExportFilename("EN", new Date("2026-09-21T08:00:00Z"))).toBe("voce-en-words-2026-09-21.csv");
   });

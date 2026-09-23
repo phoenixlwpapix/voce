@@ -57,6 +57,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
   const submissionLock = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [spelling, setSpelling] = useState<Extract<LookupActionResult, { status: "needs_confirmation" }> | null>(null);
+  const [formChoice, setFormChoice] = useState<Extract<LookupActionResult, { status: "form_choice" }> | null>(null);
   const [translation, setTranslation] = useState<Extract<TranslationCandidateResult, { status: "candidates" }> | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -74,6 +75,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
     setValue("");
     setError(null);
     setSpelling(null);
+    setFormChoice(null);
     setTranslation(null);
     requestAnimationFrame(() => inputRef.current?.focus());
   }
@@ -116,6 +118,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
     inputWord: string,
     selectedLanguage: Language,
     valueOnFailure = inputWord,
+    saveInflected = false,
   ) {
     if (submissionLock.current || !account || languageSwitching) return;
 
@@ -137,8 +140,14 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
         inputWord: validation.data,
         language: selectedLanguage,
         monthGroup: getLocalMonthGroup(),
+        saveInflected,
       });
+      if (result.status === "form_choice") {
+        setFormChoice(result);
+        return;
+      }
       if (result.status === "needs_confirmation") {
+        setFormChoice(null);
         setSpelling(result);
         return;
       }
@@ -149,6 +158,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
         return;
       }
       setSpelling(null);
+      setFormChoice(null);
       setValue("");
       toast.success(result.status === "created" ? `Added ${result.word}` : `${result.word} is already saved`, {
         description: result.status === "created"
@@ -257,6 +267,25 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
           </div>
           {error ? <p role="alert" className="mt-4 text-sm text-destructive">{error}</p> : null}
           <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setSpelling(null)}>Back to editing</Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={formChoice !== null} onOpenChange={(open) => { if (!open && !submitting) setFormChoice(null); }}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
+          <DialogTitle>Found a dictionary form</DialogTitle>
+          <DialogDescription>
+            “{formChoice?.inputWord}” is a valid form of “{formChoice?.baseForm}”. Nothing has been saved yet.
+          </DialogDescription>
+          <p className="mt-5 text-sm" lang="zh-CN">{formChoice?.meaningZh}</p>
+          <div className="mt-5 space-y-3">
+            <Button className="w-full" disabled={submitting} onClick={() => { if (formChoice) void submitWord(formChoice.baseForm, formChoice.language); }}>
+              {submitting ? "Checking…" : `Save dictionary form · ${formChoice?.baseForm}`}
+            </Button>
+            <Button variant="outline" className="w-full" disabled={submitting} onClick={() => { if (formChoice) void submitWord(formChoice.inputWord, formChoice.language, formChoice.inputWord, true); }}>
+              {submitting ? "Checking…" : `Save this form · ${formChoice?.inputWord}`}
+            </Button>
+          </div>
+          {error ? <p role="alert" className="mt-4 text-sm text-destructive">{error}</p> : null}
+          <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setFormChoice(null)}>Back to editing</Button>
         </DialogContent>
       </Dialog>
       <Dialog open={translation !== null} onOpenChange={(open) => { if (!open && !submitting) setTranslation(null); }}>

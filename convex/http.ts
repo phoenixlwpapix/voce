@@ -87,6 +87,7 @@ http.route({
       !isLanguage(body.language) ||
       !("monthGroup" in body) ||
       typeof body.monthGroup !== "string"
+      || ("saveInflected" in body && typeof body.saveInflected !== "boolean")
     ) {
       return jsonResponse({ error: "The lookup request is invalid." }, 400);
     }
@@ -97,6 +98,7 @@ http.route({
         inputWord: body.word,
         language: body.language,
         monthGroup: body.monthGroup,
+        saveInflected: "saveInflected" in body && typeof body.saveInflected === "boolean" ? body.saveInflected : undefined,
       });
       if (!result.ok) {
         return jsonResponse({ error: "Reconnect the extension to Voce." }, 401);

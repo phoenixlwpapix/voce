@@ -142,7 +142,7 @@ export async function setPreferredLanguage(language) {
   return result.language;
 }
 
-export async function lookupWord(word, language) {
+export async function lookupWord(word, language, saveInflected = false) {
   const normalizedWord = normalizeWord(word);
   if (!normalizedWord) {
     throw new VoceApiError("Enter a word to look up.", 400);
@@ -166,6 +166,7 @@ export async function lookupWord(word, language) {
       word: normalizedWord,
       language,
       monthGroup: getLocalMonthGroup(),
+      saveInflected,
     }),
   });
   return await readAuthorizedJson(response);

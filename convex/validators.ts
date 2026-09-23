@@ -10,6 +10,7 @@ export const languageValidator = v.union(
 export const lookupActionResultValidator = v.union(
   v.object({ status: v.union(v.literal("created"), v.literal("existing")), id: v.id("words"), word: v.string(), language: languageValidator }),
   v.object({ status: v.literal("needs_confirmation"), inputWord: v.string(), suggestions: v.array(v.object({ word: v.string(), language: languageValidator, meaningZh: v.string() })) }),
+  v.object({ status: v.literal("form_choice"), inputWord: v.string(), baseForm: v.string(), language: languageValidator, meaningZh: v.string() }),
   v.object({ status: v.literal("invalid"), inputWord: v.string() }),
 );
 
@@ -44,6 +45,7 @@ export const lookupResultValidator = v.object({
         v.union(v.literal("masculine"), v.literal("feminine"), v.literal("neutral")),
       ),
       infinitive: v.optional(v.string()),
+      baseForm: v.optional(v.string()),
       noteZh: v.optional(v.string()),
     }),
   ),

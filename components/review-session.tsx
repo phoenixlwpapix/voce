@@ -41,6 +41,7 @@ function ReviewCardBack({ word }: { word: WordDocument }) {
         <div className="my-7 flex flex-wrap gap-x-5 gap-y-2 border-y border-border py-4 text-xs text-muted-foreground">
           {word.grammar.gender ? <span>{genderLabel[word.grammar.gender]}</span> : null}
           {word.grammar.infinitive ? <span>Infinitive · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
+          {word.grammar.baseForm && word.grammar.baseForm !== word.grammar.infinitive ? <span>Base form · <b className="font-serif font-normal text-foreground">{word.grammar.baseForm}</b></span> : null}
           {word.grammar.noteZh ? <span lang="zh-CN" className="basis-full">{word.grammar.noteZh}</span> : null}
         </div>
       ) : <div className="my-7 border-t border-border" />}

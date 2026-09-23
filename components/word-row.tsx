@@ -111,6 +111,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
                 <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-l border-border pl-4 text-xs text-muted-foreground">
                   {word.grammar.gender ? <span>Gender · {genderLabel[word.grammar.gender]}</span> : null}
                   {word.grammar.infinitive ? <span>Infinitive · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
+                  {word.grammar.baseForm && word.grammar.baseForm !== word.grammar.infinitive ? <span>Base form · <b className="font-serif font-normal text-foreground">{word.grammar.baseForm}</b></span> : null}
                   {word.grammar.noteZh ? <span lang="zh-CN" className="basis-full">{word.grammar.noteZh}</span> : null}
                 </div>
               ) : null}

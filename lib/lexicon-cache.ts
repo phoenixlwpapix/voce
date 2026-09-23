@@ -18,7 +18,7 @@ const wordShape = z.object({
   definitions: z.array(z.object({ partOfSpeech: z.string(), meaningZh: z.string() })),
   grammar: z.object({
     gender: z.enum(["masculine", "feminine", "neutral"]).optional(),
-    infinitive: z.string().optional(), noteZh: z.string().optional(),
+    infinitive: z.string().optional(), baseForm: z.string().optional(), noteZh: z.string().optional(),
   }).optional(),
   examples: z.array(z.object({ target: z.string(), translationZh: z.string() })),
   monthGroup: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
