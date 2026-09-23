@@ -159,7 +159,7 @@ Opening `/review` immediately starts the due queue for the account's active lear
 
 Shortcuts are ignored while an input, textarea, select, or editable element is focused. Pronunciation uses the browser Web Speech API with exact-locale, language-prefix, then default-voice fallback.
 
-Generated pronunciation is stored as IPA for English, French, and Spanish, and as a Hiragana reading for Japanese. Language-specific generation guidance also checks agreement inside examples, including Spanish and French reflexive or pronominal verbs used after a conjugated modal or another verb. Japanese word forms use a dedicated Japanese font and language-aware line height to avoid glyph clipping at display sizes.
+Generated pronunciation is stored as IPA for English, French, and Spanish, and as a Hiragana reading for Japanese. Language-specific generation guidance checks agreement inside examples, including Spanish and French reflexive or pronominal verbs used after a conjugated modal or another verb. Spanish entries involving reflexive infinitives receive a separate example proofreading pass before saving; an obvious `me/te/nos/os gusta + ...se` mismatch is rejected if it remains. Existing saved examples are not rewritten. Japanese word forms use a dedicated Japanese font and language-aware line height to avoid glyph clipping at display sizes.
 
 ## Cache-first timeline
 

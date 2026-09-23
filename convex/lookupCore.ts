@@ -52,6 +52,21 @@ const generationSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("invalid") }),
 ]);
 
+const examplesSchema = vocabularyLookupSchema.shape.examples;
+const reflexiveInfinitivePattern = /\b[\p{L}]+(?:ar|er|ir)se\b/iu;
+
+function needsSpanishReflexiveReview(entry: z.infer<typeof vocabularyLookupSchema>): boolean {
+  return [entry.word, entry.grammar?.baseForm, entry.grammar?.infinitive,
+    ...entry.examples.map((example) => example.target)]
+    .some((value) => value !== undefined && reflexiveInfinitivePattern.test(value));
+}
+
+// A narrow, deterministic guard for the frequent "me gusta bañarse" error.
+// Other constructions are left to the contextual review rather than guessed at.
+function hasDirectGustarCliticMismatch(sentence: string): boolean {
+  return /\b(?:me|te|nos|os)\s+gustan?\s+[\p{L}]+(?:ar|er|ir)se\b/iu.test(sentence);
+}
+
 const responseJsonSchema = {
   type: "object",
   additionalProperties: false,
@@ -110,6 +125,28 @@ const responseJsonSchema = {
   required: ["status"],
 } as const;
 
+const examplesJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    examples: {
+      type: "array",
+      minItems: 2,
+      maxItems: 2,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          target: { type: "string" },
+          translationZh: { type: "string" },
+        },
+        required: ["target", "translationZh"],
+      },
+    },
+  },
+  required: ["examples"],
+} as const;
+
 const languageInstruction: Record<Language, string> = {
   EN: "English",
   FR: "French",
@@ -128,6 +165,29 @@ const languageSpecificInstruction: Record<Language, string> = {
 };
 
 export type LookupActionResult = Infer<typeof lookupActionResultValidator>;
+
+async function reviewSpanishReflexiveExamples(
+  ai: GoogleGenAI,
+  entry: z.infer<typeof vocabularyLookupSchema>,
+): Promise<z.infer<typeof examplesSchema>> {
+  const response = await ai.models.generateContent({
+    model: "gemini-3.5-flash-lite",
+    contents: JSON.stringify({ word: entry.word, grammar: entry.grammar, examples: entry.examples }),
+    config: {
+      systemInstruction: "You are proofreading two Spanish dictionary examples for Chinese learners. Return an object with exactly two corrected bilingual examples in its examples array. Keep each example's intended meaning and use the looked-up word or a natural inflection of it. Check the grammatical subject of every reflexive/pronominal verb, including infinitives after gustar, querer, poder, deber, and other verbs. Match its clitic to that subject (me, te, se, nos, os, se); for example, correct 'Me gusta bañarse' to 'Me gusta bañarme'. Do not change a third-person clitic merely because another person appears elsewhere in the sentence. Make the Chinese translations match the final Spanish sentences. Return the original examples if both are already correct. No explanations.",
+      temperature: 0,
+      responseMimeType: "application/json",
+      responseJsonSchema: examplesJsonSchema,
+      httpOptions: { timeout: 20_000 },
+    },
+  });
+  if (!response.text) throw new Error("Empty example review response");
+  const reviewed = z.object({ examples: examplesSchema }).parse(JSON.parse(response.text) as unknown).examples;
+  if (reviewed.some((example) => hasDirectGustarCliticMismatch(example.target))) {
+    throw new Error("Spanish reflexive example still has a clitic mismatch");
+  }
+  return reviewed;
+}
 
 type LookupForOwnerArgs = {
   ownerId: Id<"users">;
@@ -231,6 +291,9 @@ export async function lookupAndSaveForOwner(
     }
     if (language === "JA" && !hiraganaReadingPattern.test(result.phonetic)) {
       throw new Error("Japanese pronunciation was not returned in Hiragana");
+    }
+    if (language === "ES" && needsSpanishReflexiveReview(generated)) {
+      result.examples = await reviewSpanishReflexiveExamples(ai, generated);
     }
     const saved = await ctx.runMutation(internal.internalWords.upsertLookupResult, {
       ownerId: args.ownerId,

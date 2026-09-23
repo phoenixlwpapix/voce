@@ -76,6 +76,7 @@ test("same-language duplicates preserve review progress and original month", asy
   const t = await setup();
   await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
   generateContent.mockResolvedValueOnce({ text: JSON.stringify(spanishVocabulary) });
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({ examples: spanishVocabulary.examples }) });
   const first = await t.action(api.lookup.lookupAndSave, {
     inputWord: "cepillarse",
     language: "ES",
@@ -206,6 +207,12 @@ test("a valid Spanish reflexive conjugation offers its infinitive before saving"
   })).toMatchObject({ status: "form_choice", baseForm: "quejarse" });
   expect(await t.query(api.words.getWordsByMonth, { language: "ES" })).toEqual([]);
 
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    ...spanishVocabulary,
+    word: "me quejo",
+    grammar: { infinitive: "quejarse", baseForm: "quejarse" },
+  }) });
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({ examples: spanishVocabulary.examples }) });
   expect((await t.action(api.lookup.lookupAndSave, {
     inputWord: "me quejo",
     language: "ES",
@@ -220,6 +227,51 @@ test("a valid Spanish reflexive conjugation offers its infinitive before saving"
   expect(generateContent).not.toHaveBeenCalled();
 });
 
+test("Spanish reflexive examples are reviewed and corrected before saving", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    ...spanishVocabulary,
+    word: "bañarse",
+    examples: [
+      { target: "Me gusta bañarse con agua tibia por la noche.", translationZh: "我喜欢晚上用温水洗澡。" },
+      { target: "Tú debes bañarse antes de dormir.", translationZh: "你睡前应该洗澡。" },
+    ],
+  }) });
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({ examples: [
+    { target: "Me gusta bañarme con agua tibia por la noche.", translationZh: "我喜欢晚上用温水洗澡。" },
+    { target: "Tú debes bañarte antes de dormir.", translationZh: "你睡前应该洗澡。" },
+  ] }) });
+
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "bañarse", language: "ES", monthGroup: "2026-09",
+  })).status).toBe("created");
+  const words = await t.query(api.words.getWordsByMonth, { language: "ES" });
+  expect(words[0].examples.map((example) => example.target)).toEqual([
+    "Me gusta bañarme con agua tibia por la noche.",
+    "Tú debes bañarte antes de dormir.",
+  ]);
+  expect(generateContent).toHaveBeenCalledTimes(2);
+});
+
+test("a clearly mismatched Spanish reflexive example is not saved if review misses it", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  const badExamples = [
+    { target: "Me gusta bañarse con agua tibia.", translationZh: "我喜欢用温水洗澡。" },
+    { target: "Ella quiere bañarse.", translationZh: "她想洗澡。" },
+  ];
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    ...spanishVocabulary, word: "bañarse", examples: badExamples,
+  }) });
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({ examples: badExamples }) });
+
+  await expect(t.action(api.lookup.lookupAndSave, {
+    inputWord: "bañarse", language: "ES", monthGroup: "2026-09",
+  })).rejects.toThrow("The lookup couldn't be completed");
+  expect(await t.query(api.words.getWordsByMonth, { language: "ES" })).toEqual([]);
+});
+
 test("choosing an already saved base form returns the existing entry without changing review progress", async () => {
   const t = await setup();
   await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
@@ -228,6 +280,7 @@ test("choosing an already saved base form returns the existing entry without cha
     word: "quejarse",
     definitions: [{ partOfSpeech: "verb", meaningZh: "抱怨" }],
   }) });
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({ examples: spanishVocabulary.examples }) });
   const saved = await t.action(api.lookup.lookupAndSave, {
     inputWord: "quejarse", language: "ES", monthGroup: "2026-08",
   });
