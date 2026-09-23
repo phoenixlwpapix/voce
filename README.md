@@ -10,6 +10,8 @@ The timeline can export the vocabulary collection as a UTF-8 CSV for local use. 
 
 The home lookup supports two explicit directions through one compact language-swap control beside the input: **ES → 中文**, for example, reverses to **中文 → ES** when clicked. Foreign-language → Chinese validates and saves vocabulary already written in the active language. Chinese → foreign-language accepts a meaningful Simplified Chinese word or short phrase and asks Gemini for one to three common expressions in the active language. Suggestions are ranked and include concise Chinese meaning and usage distinctions; nothing is stored until the user chooses a candidate, which then passes through the normal strict-language lookup, deduplication, and save flow. An explicit direction avoids confusing Chinese text with Japanese kanji.
 
+New lookups use a fixed part-of-speech category list and save its label in the selected learning language, so abbreviations and mixed-language labels cannot enter new entries. French and Spanish nouns must include a separate gender value before they are saved. Gender labels in the timeline and review card also follow the learning language. Existing entries retain their stored part-of-speech and grammar data.
+
 Production: https://voce-fawn.vercel.app
 
 ## Stack

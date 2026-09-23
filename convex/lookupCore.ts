@@ -8,6 +8,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import { normalizeWord, sanitizeInput, type Language } from "./normalization";
+import { isPronominalVerb, partOfSpeechCodes, partOfSpeechLabel } from "../lib/parts-of-speech";
 
 const maxWordLength = 80;
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -22,7 +23,7 @@ const vocabularyLookupSchema = z.object({
   definitions: z
     .array(
       z.object({
-        partOfSpeech: z.string().trim().min(1).max(80),
+        partOfSpeech: z.enum(partOfSpeechCodes),
         meaningZh: z.string().trim().min(1).max(240),
       }),
     )
@@ -91,7 +92,7 @@ const responseJsonSchema = {
         type: "object",
         additionalProperties: false,
         properties: {
-          partOfSpeech: { type: "string" },
+          partOfSpeech: { type: "string", enum: partOfSpeechCodes, description: "Use exactly one category code. Never write a translated label, abbreviation, or gender here. Use pronominal_verb for reflexive/pronominal verbs." },
           meaningZh: { type: "string" },
         },
         required: ["partOfSpeech", "meaningZh"],
@@ -155,7 +156,7 @@ const languageInstruction: Record<Language, string> = {
 };
 
 const baseLexicographerInstruction =
-  "You are a precise multilingual lexicographer for Chinese learners. Return the requested valid form, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. In the phonetic field, return Hiragana only for Japanese vocabulary; for every other language return IPA only. Never add slashes, brackets, pitch-accent numbers, or explanatory prose to the phonetic field. For relevant French or Spanish nouns include gender. For a genuine inflection, put its dictionary headword in grammar.baseForm: singular for plural nouns (children → child), infinitive for conjugated verbs, reflexive infinitive for conjugated reflexive verbs (me quejo → quejarse), and dictionary form for Japanese inflections. Only provide a base form when it is a reliable morphological relationship, never a synonym, translation, or spelling correction. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, also put the infinitive or Japanese dictionary form in grammar.infinitive. For Japanese vocabulary, use the grammar note for a concise usage note when helpful. Omit irrelevant grammar fields. Before returning, check that every example is grammatically correct and that its subject, finite verbs, pronouns, and possessives agree. Never use Markdown.";
+  "You are a precise multilingual lexicographer for Chinese learners. Return the requested valid form, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. For each partOfSpeech use only the exact category code from the schema, never an abbreviation, localized label, gender suffix, or multiple categories in one string. Classify reflexive/pronominal verbs as pronominal_verb. In the phonetic field, return Hiragana only for Japanese vocabulary; for every other language return IPA only. Never add slashes, brackets, pitch-accent numbers, or explanatory prose to the phonetic field. For every ordinary French or Spanish noun include grammar.gender as masculine or feminine, even when there are multiple noun senses; never put gender in partOfSpeech. For a genuine inflection, put its dictionary headword in grammar.baseForm: singular for plural nouns (children → child), infinitive for conjugated verbs, reflexive infinitive for conjugated reflexive verbs (me quejo → quejarse), and dictionary form for Japanese inflections. Only provide a base form when it is a reliable morphological relationship, never a synonym, translation, or spelling correction. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, also put the infinitive or Japanese dictionary form in grammar.infinitive. For Japanese vocabulary, use the grammar note for a concise usage note when helpful. Omit irrelevant grammar fields. Before returning, check that every example is grammatically correct and that its subject, finite verbs, pronouns, and possessives agree. Never use Markdown.";
 
 const languageSpecificInstruction: Record<Language, string> = {
   EN: "Write idiomatic English examples with consistent person, number, and tense.",
@@ -292,16 +293,33 @@ export async function lookupAndSaveForOwner(
     if (language === "JA" && !hiraganaReadingPattern.test(result.phonetic)) {
       throw new Error("Japanese pronunciation was not returned in Hiragana");
     }
+    if ((language === "FR" || language === "ES") &&
+      result.definitions.some((definition) => definition.partOfSpeech === "noun") &&
+      !result.grammar?.gender) {
+      throw new Error("French or Spanish noun was returned without gender");
+    }
     if (language === "ES" && needsSpanishReflexiveReview(generated)) {
       result.examples = await reviewSpanishReflexiveExamples(ai, generated);
     }
+    const storedResult = {
+      ...result,
+      definitions: result.definitions.map((definition) => ({
+        ...definition,
+        partOfSpeech: partOfSpeechLabel(
+          language,
+          definition.partOfSpeech === "verb" && isPronominalVerb(language, [result.word, result.grammar?.baseForm, result.grammar?.infinitive])
+            ? "pronominal_verb"
+            : definition.partOfSpeech,
+        ),
+      })),
+    };
     const saved = await ctx.runMutation(internal.internalWords.upsertLookupResult, {
       ownerId: args.ownerId,
       inputWord,
       normalizedWord: normalizeWord(inputWord, language),
       language,
       monthGroup: args.monthGroup,
-      result,
+      result: storedResult,
     });
     return { ...saved, language };
   } catch (error) {

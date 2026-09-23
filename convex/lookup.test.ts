@@ -72,6 +72,48 @@ test("a valid ambiguous word stays in the selected language", async () => {
   })).toMatchObject({ language: "EN", status: "created" });
 });
 
+test("new Spanish nouns use one Spanish part-of-speech label and keep gender separate", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  generateContent.mockResolvedValue({ text: JSON.stringify({
+    ...spanishVocabulary,
+    word: "baloncesto",
+    definitions: [{ partOfSpeech: "noun", meaningZh: "篮球" }],
+    grammar: { gender: "masculine" },
+  }) });
+
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "baloncesto", language: "ES", monthGroup: "2026-09",
+  })).status).toBe("created");
+  expect((await t.query(api.words.getWordsByMonth, { language: "ES" }))[0]).toMatchObject({
+    definitions: [{ partOfSpeech: "sustantivo", meaningZh: "篮球" }],
+    grammar: { gender: "masculine" },
+  });
+});
+
+test("new Spanish nouns without gender and noncanonical part-of-speech values are not saved", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  const noun = {
+    ...spanishVocabulary,
+    word: "elogio",
+    definitions: [{ partOfSpeech: "noun", meaningZh: "赞美" }],
+  };
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify(noun) });
+  await expect(t.action(api.lookup.lookupAndSave, {
+    inputWord: "elogio", language: "ES", monthGroup: "2026-09",
+  })).rejects.toThrow("The lookup couldn't be completed");
+
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    ...noun, definitions: [{ partOfSpeech: "sustantivo masculino", meaningZh: "赞美" }],
+    grammar: { gender: "masculine" },
+  }) });
+  await expect(t.action(api.lookup.lookupAndSave, {
+    inputWord: "elogio", language: "ES", monthGroup: "2026-09",
+  })).rejects.toThrow("The lookup couldn't be completed");
+  expect(await t.query(api.words.getWordsByMonth, { language: "ES" })).toEqual([]);
+});
+
 test("same-language duplicates preserve review progress and original month", async () => {
   const t = await setup();
   await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
@@ -93,6 +135,7 @@ test("same-language duplicates preserve review progress and original month", asy
   const words = await t.query(api.words.getWordsByMonth, { language: "ES" });
   expect(words).toHaveLength(1);
   expect(words[0]).toMatchObject({ repetitions: 1, monthGroup: "2026-08" });
+  expect(words[0].definitions[0].partOfSpeech).toBe("verbo pronominal");
   expect(generateContent).not.toHaveBeenCalled();
 });
 
