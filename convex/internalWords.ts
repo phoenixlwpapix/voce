@@ -48,7 +48,7 @@ export const upsertLookupResult = internalMutation({
     word: v.string(),
   }),
   handler: async (ctx, args) => {
-    const phonetic = normalizePhonetic(args.result.phonetic);
+    const phonetic = normalizePhonetic(args.result.phonetic, args.language);
     const existing = await ctx.db
       .query("words")
       .withIndex("by_ownerId_language_normalizedWord", (query) =>

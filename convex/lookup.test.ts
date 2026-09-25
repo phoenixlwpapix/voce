@@ -385,3 +385,49 @@ test("the web lookup rejects a language that is not the saved preference", async
   })).rejects.toThrow("learning language changed");
   expect(generateContent).not.toHaveBeenCalled();
 });
+
+test("a transcription outside the convention is repaired once before saving", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  generateContent
+    .mockResolvedValueOnce({ text: JSON.stringify({
+      ...spanishVocabulary,
+      word: "colgar",
+      phonetic: "koɹgaɹ",
+      definitions: [
+        { partOfSpeech: "verb", meaningZh: "挂；悬挂。" },
+        { partOfSpeech: "verb", meaningZh: "挂；悬挂。" },
+      ],
+      grammar: { infinitive: "colgar", noteZh: "常用于挂电话" },
+      examples: [
+        { target: "Cuelga el abrigo aquí.", translationZh: "把大衣挂在这里。" },
+        { target: "No cuelgues todavía.", translationZh: "先别挂电话。" },
+      ],
+    }) })
+    .mockResolvedValueOnce({ text: JSON.stringify({ phonetic: "/kol'gaɾ/" }) });
+
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "colgar", language: "ES", monthGroup: "2026-09",
+  })).status).toBe("created");
+  const [saved] = await t.query(api.words.getWordsByMonth, { language: "ES" });
+  expect(saved).toMatchObject({
+    phonetic: "kolˈɡaɾ",
+    definitions: [{ partOfSpeech: "verbo", meaningZh: "挂，悬挂" }],
+    grammar: { noteZh: "常用于挂电话。" },
+  });
+  expect(saved.grammar?.infinitive).toBeUndefined();
+  expect(generateContent).toHaveBeenCalledTimes(2);
+});
+
+test("a transcription that is still invalid after repair is not saved", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  generateContent
+    .mockResolvedValueOnce({ text: JSON.stringify({ ...spanishVocabulary, word: "colgar", phonetic: "koɹgaɹ" }) })
+    .mockResolvedValueOnce({ text: JSON.stringify({ phonetic: "koɹgaɹ" }) });
+
+  await expect(t.action(api.lookup.lookupAndSave, {
+    inputWord: "colgar", language: "ES", monthGroup: "2026-09",
+  })).rejects.toThrow("couldn't be completed");
+  expect(await t.query(api.words.getWordsByMonth, { language: "ES" })).toEqual([]);
+});

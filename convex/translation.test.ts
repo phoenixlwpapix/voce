@@ -45,8 +45,8 @@ test("returns one to three ranked candidates without writing words", async () =>
       status: "candidates",
       queryZh: "尴尬",
       candidates: [
-        { word: "awkward", partOfSpeech: "adjective", meaningZh: "场面或行为令人尴尬", usageZh: "常形容处境或互动" },
-        { word: "embarrassed", partOfSpeech: "adjective", meaningZh: "人感到难为情", usageZh: "主语通常是感到尴尬的人" },
+        { word: "awkward", partOfSpeech: "adjective", meaningZh: "场面或行为令人尴尬", usageZh: "常形容处境或互动。" },
+        { word: "embarrassed", partOfSpeech: "adjective", meaningZh: "人感到难为情", usageZh: "主语通常是感到尴尬的人。" },
       ],
     });
   expect(await t.query(api.words.getWordsByMonth, { language: "EN" })).toEqual([]);
