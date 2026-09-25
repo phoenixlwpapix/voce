@@ -71,3 +71,23 @@ test("timeline and review queries only return the requested language", async () 
   });
   expect([...firstExportPage.page, ...secondExportPage.page].map((word) => word.language).sort()).toEqual(["EN", "FR"]);
 });
+
+test("rating a card that is no longer due does not advance it again", async () => {
+  const t = convexTest(schema, modules);
+  const [owner, wordId] = await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", { email: "owner@example.test" });
+    await ctx.db.insert("appOwners", { key: "primary", userId, createdAt: 1 });
+    const wordId = await ctx.db.insert("words", {
+      ownerId: userId, inputWord: "hello", normalizedWord: "hello", word: "hello", language: "EN",
+      phonetic: "həˈləʊ", definitions: [], examples: [], monthGroup: "2026-09",
+      repetitions: 0, intervalDays: 0, easeFactor: 2.5, nextReviewAt: 1, createdAt: 1, updatedAt: 1,
+    });
+    return [userId, wordId] as const;
+  });
+  const signedIn = t.withIdentity({ subject: `${owner}|session` });
+
+  const first = await signedIn.mutation(api.words.updateReviewState, { id: wordId, outcome: "remembered" });
+  const second = await signedIn.mutation(api.words.updateReviewState, { id: wordId, outcome: "remembered" });
+  expect(first.repetitions).toBe(1);
+  expect(second).toEqual(first);
+});

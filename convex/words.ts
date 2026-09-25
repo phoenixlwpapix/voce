@@ -124,6 +124,16 @@ export const updateReviewState = mutation({
     if (word.ownerId !== ownerId) {
       throw new ConvexError("You don't have permission to update this word.");
     }
+    // A card that is no longer due was already rated (for example in another
+    // tab); rating it again must not advance the schedule a second time.
+    if (word.nextReviewAt > Date.now()) {
+      return {
+        repetitions: word.repetitions,
+        intervalDays: word.intervalDays,
+        easeFactor: word.easeFactor,
+        nextReviewAt: word.nextReviewAt,
+      };
+    }
 
     let repetitions: number;
     let intervalDays: number;

@@ -68,9 +68,14 @@ export function ReviewSession() {
   const updateReviewState = useMutation(api.words.updateReviewState);
   const { available: speechAvailable, speak } = useSpeech();
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(() => new Set());
+  // Forgotten cards come back at the end of the session for practice. Their
+  // schedule was already saved when they were first rated, so repeats stay local.
+  const [relearning, setRelearning] = useState<WordDocument[]>([]);
   const [flippedId, setFlippedId] = useState<string | null>(null);
   const [rating, setRating] = useState(false);
-  const current = queue?.find((word) => !reviewedIds.has(word._id));
+  const dueCard = queue?.find((word) => !reviewedIds.has(word._id));
+  const current = dueCard ?? relearning[0];
+  const isRelearning = dueCard === undefined && current !== undefined;
   const flipped = current !== undefined && flippedId === current._id;
 
   const playCurrent = useCallback(() => {
@@ -80,10 +85,16 @@ export function ReviewSession() {
   const rateCurrent = useCallback(
     async (outcome: "forgot" | "remembered") => {
       if (!current || !flipped || rating) return;
+      if (isRelearning) {
+        setRelearning((cards) => outcome === "forgot" ? [...cards.slice(1), cards[0]] : cards.slice(1));
+        setFlippedId(null);
+        return;
+      }
       setRating(true);
       try {
         await updateReviewState({ id: current._id, outcome });
         setReviewedIds((existing) => new Set(existing).add(current._id));
+        if (outcome === "forgot") setRelearning((cards) => [...cards, current]);
         setFlippedId(null);
       } catch (error) {
         toast.error(getUserErrorMessage(error));
@@ -91,7 +102,7 @@ export function ReviewSession() {
         setRating(false);
       }
     },
-    [current, flipped, rating, updateReviewState],
+    [current, flipped, isRelearning, rating, updateReviewState],
   );
 
   useEffect(() => {
@@ -143,13 +154,17 @@ export function ReviewSession() {
   );
   const total = reviewedIds.size + remainingCount;
   const position = Math.min(reviewedIds.size + 1, Math.max(total, 1));
-  const progress = total > 0 ? ((position - 1) / total) * 100 : 100;
+  const progress = isRelearning ? 100 : total > 0 ? ((position - 1) / total) * 100 : 100;
 
   return (
     <main className="flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
         <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Exit</Link></Button>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{language} · Due now · {String(position).padStart(2, "0")} / {String(total).padStart(2, "0")}</p>
+        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
+          {isRelearning
+            ? `${language} · Relearning · ${relearning.length} left`
+            : `${language} · Due now · ${String(position).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
+        </p>
         <Button type="button" variant="ghost" size="icon" onClick={playCurrent} disabled={!speechAvailable} aria-label={`Pronounce ${current.word}`} title={speechAvailable ? "Press Space to pronounce" : "Speech is unavailable in this browser"}><Volume2 className="size-4" /></Button>
       </header>
 
