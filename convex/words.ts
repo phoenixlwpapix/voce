@@ -35,6 +35,23 @@ export const getWordsForExport = query({
   },
 });
 
+// The timeline pages through a whole lexicon; each page is its own
+// subscription, so an edit only re-sends the page that contains it.
+export const listWords = query({
+  args: { language: languageValidator, paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(schema.doc("words")),
+  handler: async (ctx, args) => {
+    const ownerId = await requireOwner(ctx);
+    return await ctx.db
+      .query("words")
+      .withIndex("by_ownerId_language_createdAt", (index) =>
+        index.eq("ownerId", ownerId).eq("language", args.language),
+      )
+      .order("desc")
+      .paginate(args.paginationOpts);
+  },
+});
+
 export const getWordsByMonth = query({
   args: { language: languageValidator, monthGroup: v.optional(v.string()) },
   returns: v.array(schema.doc("words")),

@@ -26,10 +26,12 @@ const wordShape = z.object({
   nextReviewAt: z.number(), lastReviewedAt: z.optional(z.number()),
   createdAt: z.number(), updatedAt: z.number(),
 });
+// A sanity bound for untrusted storage, far above any real lexicon.
+const maxCachedWords = 50_000;
 // Zod 4 numbers already reject Infinity and NaN.
 const cacheShape = z.object({
   version: z.literal(2), userId: z.string(), language: z.enum(languages), updatedAt: z.number(),
-  words: z.array(z.custom<WordDocument>((word) => wordShape.safeParse(word).success)).check(z.maxLength(500)),
+  words: z.array(z.custom<WordDocument>((word) => wordShape.safeParse(word).success)).check(z.maxLength(maxCachedWords)),
 });
 
 interface CacheDatabase extends DBSchema {
@@ -96,4 +98,13 @@ export async function getCacheMetadata(userId: string, language: Language) {
   return cache
     ? { userId: cache.userId, language: cache.language, updatedAt: cache.updatedAt, wordCount: cache.words.length }
     : null;
+}
+
+// While live pages stream in, older words come from the last complete cache.
+// Everything at or after the oldest live word is live, so deletions there are
+// already reflected; the cache only fills the not-yet-loaded tail.
+export function mergeLiveWithCache(live: WordDocument[], cached: WordDocument[]) {
+  if (live.length === 0) return cached;
+  const oldestLive = live[live.length - 1].createdAt;
+  return [...live, ...cached.filter((word) => word.createdAt < oldestLive)];
 }

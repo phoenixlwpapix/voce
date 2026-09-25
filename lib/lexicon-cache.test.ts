@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 import { openDB } from "idb";
 import { afterEach, expect, test, vi } from "vitest";
-import { clearCachedWords, getCachedWords, getCacheMetadata, setCachedWords } from "./lexicon-cache";
+import { clearCachedWords, getCachedWords, getCacheMetadata, mergeLiveWithCache, setCachedWords } from "./lexicon-cache";
 import type { WordDocument } from "./types";
 import type { Id } from "../convex/_generated/dataModel";
 
@@ -72,4 +72,17 @@ test("storage failure never escapes the optional cache layer", async () => {
   });
   await expect(getCachedWords("A", "EN")).resolves.toBeNull();
   await expect(setCachedWords("A", "EN", [word])).resolves.toBeUndefined();
+});
+
+const at = (id: string, createdAt: number) => ({ ...word, _id: id as Id<"words">, createdAt });
+
+test("cached words only fill the tail that live pages have not reached", () => {
+  const live = [at("new", 30), at("b", 20)];
+  const cached = [at("b", 20), at("deleted", 25), at("a", 10), at("old", 5)];
+  expect(mergeLiveWithCache(live, cached).map((item) => item._id)).toEqual(["new", "b", "a", "old"]);
+});
+
+test("the cache stands in until the first live page arrives", () => {
+  const cached = [at("a", 10)];
+  expect(mergeLiveWithCache([], cached)).toBe(cached);
 });
