@@ -10,6 +10,7 @@
   --border: #eae9e6;
   --ring: #777670;
   --destructive: #a33f35;
+  --success: #4f7358;
   --en: #5b6b82;
   --fr: #8c6d68;
   --es: #7d7a5e;
@@ -24,6 +25,7 @@
   --border: #262626;
   --ring: #9a9a95;
   --destructive: #d77b70;
+  --success: #8db596;
   --en: #5b6b82;
   --fr: #8c6d68;
   --es: #7d7a5e;
@@ -38,6 +40,7 @@
   --color-border: var(--border);
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
   --color-en: var(--en);
   --color-fr: var(--fr);
   --color-es: var(--es);

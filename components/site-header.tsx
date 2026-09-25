@@ -3,7 +3,7 @@
 import { useContext, useEffect, useRef } from "react";
 import { SignOutContext, useOwnerSession } from "@/hooks/use-owner-session";
 import Link from "next/link";
-import { BookOpenText, LogOut, Puzzle, Settings2, UserPlus } from "lucide-react";
+import { BookOpenText, ListChecks, LogOut, Puzzle, Settings2, UserPlus } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { VocabularyExport } from "@/components/vocabulary-export";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,12 @@ export function SiteHeader({ language }: { language?: Language }) {
           <Link href="/review">
             <BookOpenText className="size-4" aria-hidden="true" />
             <span>Review</span>
+          </Link>
+        </Button>
+        <Button asChild variant="ghost" size="default" className="px-2 text-xs sm:px-3">
+          <Link href="/quiz">
+            <ListChecks className="size-4" aria-hidden="true" />
+            <span>Quiz</span>
           </Link>
         </Button>
         <details ref={menuRef} className="group relative">

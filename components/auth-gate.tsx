@@ -293,7 +293,7 @@ function SessionGate({ children, subject, signOut, inviteToken }: {
   }, [session, subject]);
 
   if (session === undefined) {
-    return pathname === "/" || pathname === "/review"
+    return pathname === "/" || pathname === "/review" || pathname === "/quiz"
       ? <OwnerSessionContext value={cachedSession}>{children}</OwnerSessionContext>
       : <LoadingScreen label="Checking your account…" />;
   }
