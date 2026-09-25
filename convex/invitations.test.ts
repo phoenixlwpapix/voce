@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { afterEach, expect, test, vi } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
+import { assertSignUpAllowed } from "./signUpPolicy";
 
 const modules = import.meta.glob("./**/*.ts");
 afterEach(() => vi.unstubAllEnvs());
@@ -57,4 +58,27 @@ test("revoked invitation cannot be redeemed", async () => {
   await admin.mutation(api.invitations.revoke, { id: invitation.id });
   await expect(t.withIdentity({ subject: `${friend}|session` })
     .action(api.invitationActions.accept, { token })).rejects.toThrow();
+});
+
+test("new accounts need the owner email or a redeemable invitation", async () => {
+  vi.stubEnv("APP_OWNER_EMAIL", "owner@example.test");
+  const t = convexTest(schema, modules);
+  const owner = await t.run(async (ctx) => {
+    const owner = await ctx.db.insert("users", { email: "owner@example.test" });
+    await ctx.db.insert("appOwners", { key: "primary", userId: owner, createdAt: 1 });
+    return owner;
+  });
+  const admin = t.withIdentity({ subject: `${owner}|session` });
+  const { token } = await admin.action(api.invitationActions.create);
+  const signUp = (email: string, inviteToken?: string) =>
+    t.run(async (ctx) => { await assertSignUpAllowed(ctx, email, inviteToken); });
+
+  await expect(signUp("Owner@Example.test")).resolves.toBeNull();
+  await expect(signUp("friend@example.test", token)).resolves.toBeNull();
+  await expect(signUp("stranger@example.test")).rejects.toThrow("invite-only");
+  await expect(signUp("stranger@example.test", "x".repeat(43))).rejects.toThrow("invite-only");
+
+  const [invitation] = await admin.query(api.invitations.list);
+  await admin.mutation(api.invitations.revoke, { id: invitation.id });
+  await expect(signUp("friend@example.test", token)).rejects.toThrow("invite-only");
 });

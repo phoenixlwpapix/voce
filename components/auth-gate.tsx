@@ -30,7 +30,8 @@ function LoadingScreen({ label }: { label: string }) {
   );
 }
 
-function SignInScreen({ invited }: { invited: boolean }) {
+function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
+  const invited = inviteToken !== null;
   const { signIn } = useAuthActions();
   const [mode, setMode] = useState<AuthMode>(invited ? "signUp" : "signIn");
   const [submitting, setSubmitting] = useState(false);
@@ -56,12 +57,20 @@ function SignInScreen({ invited }: { invited: boolean }) {
     setSubmitting(true);
     setError(null);
     try {
-      await signIn("password", { email, password, flow: mode });
-    } catch {
+      await signIn("password", {
+        email,
+        password,
+        flow: mode,
+        ...(mode === "signUp" && inviteToken ? { inviteToken } : {}),
+      });
+    } catch (caughtError) {
+      const serverMessage = caughtError && typeof caughtError === "object" && "data" in caughtError && typeof caughtError.data === "string"
+        ? caughtError.data
+        : null;
       setError(
         mode === "signIn"
           ? "Incorrect email or password. Try again."
-          : "Couldn't create the account. If this email is already registered, switch to sign in.",
+          : serverMessage ?? "Couldn't create the account. If this email is already registered, switch to sign in.",
       );
     } finally {
       setSubmitting(false);
@@ -132,7 +141,7 @@ function SignInScreen({ invited }: { invited: boolean }) {
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
             {mode === "signIn"
               ? "Sign in to keep collecting and reviewing your words."
-              : invited ? "Create an account to accept your invitation and start your own lexicon." : "Create an account to get started with Voce."}
+              : invited ? "Create an account to accept your invitation and start your own lexicon." : "Voce is invite-only. Open your invitation link to create an account."}
           </p>
 
           <div className="mt-10 grid grid-cols-2 border-y border-border" role="tablist" aria-label="Account options">
@@ -343,7 +352,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       ? <OwnerSessionContext value={null}>{children}</OwnerSessionContext>
       : <LoadingScreen label="Checking your session…" />;
   }
-  if (!isAuthenticated || !subject) return <SignInScreen key={inviteToken ?? "regular"} invited={Boolean(inviteToken)} />;
+  if (!isAuthenticated || !subject) return <SignInScreen key={inviteToken ?? "regular"} inviteToken={inviteToken} />;
   return (
     <SignOutContext value={handleSignOut}>
       <SessionGate key={subject} subject={subject} signOut={handleSignOut} inviteToken={inviteToken}>{children}</SessionGate>
