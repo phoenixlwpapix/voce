@@ -60,3 +60,47 @@ export function genderLabel(language: LexiconLanguage, gender: "masculine" | "fe
   const labels = genderLabels[language];
   return `${labels.title} · ${labels[gender]}`;
 }
+
+type LegacyPartOfSpeech = { code: PartOfSpeechCode; gender?: "masculine" | "feminine" };
+
+// Labels written by earlier prompt versions: abbreviations, gendered noun
+// labels, Chinese grammar terms, and the current labels of every language.
+const legacyLabels = new Map<string, LegacyPartOfSpeech>([
+  ...partOfSpeechCodes.map((code) => [code.replace("_", " "), { code }] as const),
+  ...Object.values(labels).flatMap((table) =>
+    (Object.entries(table) as [PartOfSpeechCode, string][])
+      // Japanese labels pronominal verbs as plain 動詞; keep that label unambiguous.
+      .filter(([code, label]) => code !== "pronominal_verb" || label !== table.verb)
+      .map(([code, label]) => [label.toLowerCase(), { code }] as const)),
+  ...([
+    ["n", "noun"], ["v", "verb"], ["vt", "verb"], ["vi", "verb"], ["adj", "adjective"], ["adv", "adverb"],
+    ["prep", "preposition"], ["conj", "conjunction"], ["pron", "pronoun"], ["interj", "interjection"],
+    ["int", "interjection"], ["art", "article"], ["num", "numeral"], ["det", "determiner"], ["aux", "auxiliary_verb"],
+    ["phr", "phrase"], ["expr", "phrase"], ["loc", "phrase"], ["locution", "phrase"], ["idiom", "phrase"],
+    ["v pr", "pronominal_verb"], ["vpr", "pronominal_verb"], ["v prnl", "pronominal_verb"], ["reflexive verb", "pronominal_verb"],
+    ["transitive verb", "verb"], ["intransitive verb", "verb"],
+    ["名词", "noun"], ["专有名词", "proper_noun"], ["形容词", "adjective"], ["形容动词", "adjectival_noun"],
+    ["副词", "adverb"], ["代词", "pronoun"], ["介词", "preposition"], ["连词", "conjunction"], ["感叹词", "interjection"],
+    ["叹词", "interjection"], ["数词", "numeral"], ["冠词", "article"], ["助词", "particle"], ["短语", "phrase"],
+    ["词组", "phrase"], ["限定词", "determiner"], ["助动词", "auxiliary_verb"], ["连体词", "determiner"],
+  ] as const).map(([label, code]) => [label, { code }] as const),
+  ...([
+    ["m", "masculine"], ["f", "feminine"], ["nm", "masculine"], ["nf", "feminine"], ["n m", "masculine"], ["n f", "feminine"],
+    ["sm", "masculine"], ["sf", "feminine"], ["s m", "masculine"], ["s f", "feminine"],
+    ["nom masculin", "masculine"], ["nom féminin", "feminine"], ["sustantivo masculino", "masculine"],
+    ["sustantivo femenino", "feminine"], ["masculine noun", "masculine"], ["feminine noun", "feminine"],
+  ] as const).map(([label, gender]) => [label, { code: "noun", gender }] as const),
+]);
+
+export function legacyPartOfSpeech(label: string): LegacyPartOfSpeech | null {
+  const key = label.normalize("NFC").trim().toLowerCase().replace(/[.·]/g, " ").replace(/\s+/g, " ").trim();
+  const known = legacyLabels.get(key);
+  if (known) return known;
+  // Chinese and Japanese verb subclasses such as 自动词五段 or 他動詞.
+  if (/助[动動]词|助動詞/u.test(key)) return { code: "auxiliary_verb" };
+  if (/形容[动動]/u.test(key)) return { code: "adjectival_noun" };
+  if (/[动動][词詞]/u.test(key)) return { code: "verb" };
+  if (/形容[词詞]/u.test(key)) return { code: "adjective" };
+  if (/名[词詞]/u.test(key)) return { code: "noun" };
+  return null;
+}

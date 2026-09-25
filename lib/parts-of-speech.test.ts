@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { genderLabel, isPronominalVerb, partOfSpeechLabel } from "./parts-of-speech";
+import { genderLabel, isPronominalVerb, legacyPartOfSpeech, partOfSpeechLabel } from "./parts-of-speech";
 
 test("the same category has a fixed label in each learning language", () => {
   expect(partOfSpeechLabel("EN", "noun")).toBe("noun");
@@ -12,4 +12,28 @@ test("the same category has a fixed label in each learning language", () => {
   expect(genderLabel("FR", "feminine")).toBe("Genre · féminin");
   expect(isPronominalVerb("ES", ["cepillarse"])).toBe(true);
   expect(isPronominalVerb("FR", ["se laver"])).toBe(true);
+});
+
+test.each([
+  ["adj.", { code: "adjective" }],
+  ["n.", { code: "noun" }],
+  ["v.", { code: "verb" }],
+  ["m.", { code: "noun", gender: "masculine" }],
+  ["n.m.", { code: "noun", gender: "masculine" }],
+  ["sustantivo masculino", { code: "noun", gender: "masculine" }],
+  ["sustantivo", { code: "noun" }],
+  ["名词", { code: "noun" }],
+  ["动词", { code: "verb" }],
+  ["自动词五段", { code: "verb" }],
+  ["他動詞", { code: "verb" }],
+  ["動詞", { code: "verb" }],
+  ["形容动词", { code: "adjectival_noun" }],
+  ["verbe pronominal", { code: "pronominal_verb" }],
+  ["interjection", { code: "interjection" }],
+] as const)("maps the legacy label %s", (label, expected) => {
+  expect(legacyPartOfSpeech(label)).toEqual(expected);
+});
+
+test("leaves unrecognized labels for review", () => {
+  expect(legacyPartOfSpeech("something else")).toBeNull();
 });

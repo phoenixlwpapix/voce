@@ -9,9 +9,10 @@ import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import { normalizeWord, sanitizeInput, type Language } from "./normalization";
 import { consumeGenerationQuota } from "./rateLimits";
+import { normalizeGrammar } from "./wordFormat";
 import { isPronominalVerb, partOfSpeechCodes, partOfSpeechLabel } from "../lib/parts-of-speech";
 import { normalizePhonetic, phoneticProblem } from "../lib/phonetics";
-import { definitionStyleInstruction, normalizeDefinitions, normalizeNoteZh, phoneticConvention } from "../lib/entry-format";
+import { definitionStyleInstruction, normalizeDefinitions, phoneticConvention } from "../lib/entry-format";
 
 const maxWordLength = 80;
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -176,22 +177,6 @@ const languageSpecificInstruction: Record<Language, string> = {
 
 export type LookupActionResult = Infer<typeof lookupActionResultValidator>;
 
-type GeneratedGrammar = z.infer<typeof vocabularyLookupSchema>["grammar"];
-
-// Drops forms that only repeat the headword and normalizes the usage note.
-function normalizeGrammar(grammar: GeneratedGrammar, word: string, language: Language): GeneratedGrammar {
-  if (!grammar) return undefined;
-  const headword = normalizeWord(word, language);
-  const { infinitive, baseForm, noteZh, ...rest } = grammar;
-  const normalized = {
-    ...rest,
-    ...(infinitive && normalizeWord(infinitive, language) !== headword ? { infinitive } : {}),
-    ...(baseForm && normalizeWord(baseForm, language) !== headword ? { baseForm } : {}),
-    ...(noteZh ? { noteZh: normalizeNoteZh(noteZh) } : {}),
-  };
-  return Object.keys(normalized).length ? normalized : undefined;
-}
-
 async function reviewSpanishReflexiveExamples(
   ai: GoogleGenAI,
   entry: z.infer<typeof vocabularyLookupSchema>,
@@ -217,7 +202,7 @@ async function reviewSpanishReflexiveExamples(
 
 // Returns a transcription that satisfies the language's convention, asking the
 // model once for a corrected transcription when the first one does not.
-async function conventionalPhonetic(
+export async function conventionalPhonetic(
   ai: GoogleGenAI,
   language: Language,
   word: string,

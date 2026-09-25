@@ -18,11 +18,15 @@ import type * as invitationActions from "../invitationActions.js";
 import type * as invitations from "../invitations.js";
 import type * as lookup from "../lookup.js";
 import type * as lookupCore from "../lookupCore.js";
+import type * as migrationActions from "../migrationActions.js";
+import type * as migrations from "../migrations.js";
 import type * as normalization from "../normalization.js";
 import type * as ownership from "../ownership.js";
 import type * as rateLimits from "../rateLimits.js";
+import type * as signUpPolicy from "../signUpPolicy.js";
 import type * as translation from "../translation.js";
 import type * as validators from "../validators.js";
+import type * as wordFormat from "../wordFormat.js";
 import type * as words from "../words.js";
 
 import type {
@@ -42,11 +46,15 @@ declare const fullApi: ApiFromModules<{
   invitations: typeof invitations;
   lookup: typeof lookup;
   lookupCore: typeof lookupCore;
+  migrationActions: typeof migrationActions;
+  migrations: typeof migrations;
   normalization: typeof normalization;
   ownership: typeof ownership;
   rateLimits: typeof rateLimits;
+  signUpPolicy: typeof signUpPolicy;
   translation: typeof translation;
   validators: typeof validators;
+  wordFormat: typeof wordFormat;
   words: typeof words;
 }>;
 
