@@ -30,6 +30,9 @@ test.each([
   ["形容动词", { code: "adjectival_noun" }],
   ["verbe pronominal", { code: "pronominal_verb" }],
   ["interjection", { code: "interjection" }],
+  ["phrasal verb", { code: "verb" }],
+  ["形", { code: "adjective" }],
+  ["adjective / adverb", { code: "adjective" }],
 ] as const)("maps the legacy label %s", (label, expected) => {
   expect(legacyPartOfSpeech(label)).toEqual(expected);
 });

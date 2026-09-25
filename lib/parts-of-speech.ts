@@ -78,7 +78,9 @@ const legacyLabels = new Map<string, LegacyPartOfSpeech>([
     ["int", "interjection"], ["art", "article"], ["num", "numeral"], ["det", "determiner"], ["aux", "auxiliary_verb"],
     ["phr", "phrase"], ["expr", "phrase"], ["loc", "phrase"], ["locution", "phrase"], ["idiom", "phrase"],
     ["v pr", "pronominal_verb"], ["vpr", "pronominal_verb"], ["v prnl", "pronominal_verb"], ["reflexive verb", "pronominal_verb"],
-    ["transitive verb", "verb"], ["intransitive verb", "verb"],
+    ["transitive verb", "verb"], ["intransitive verb", "verb"], ["phrasal verb", "verb"],
+    // Japanese dictionary abbreviations.
+    ["名", "noun"], ["動", "verb"], ["形", "adjective"], ["形動", "adjectival_noun"], ["副", "adverb"],
     ["名词", "noun"], ["专有名词", "proper_noun"], ["形容词", "adjective"], ["形容动词", "adjectival_noun"],
     ["副词", "adverb"], ["代词", "pronoun"], ["介词", "preposition"], ["连词", "conjunction"], ["感叹词", "interjection"],
     ["叹词", "interjection"], ["数词", "numeral"], ["冠词", "article"], ["助词", "particle"], ["短语", "phrase"],
@@ -93,6 +95,9 @@ const legacyLabels = new Map<string, LegacyPartOfSpeech>([
 ]);
 
 export function legacyPartOfSpeech(label: string): LegacyPartOfSpeech | null {
+  // A combined label such as "adjective / adverb" keeps its first category.
+  const parts = label.split(/\s*[/,;、，]\s*/u).filter(Boolean);
+  if (parts.length > 1) return legacyPartOfSpeech(parts[0]);
   const key = label.normalize("NFC").trim().toLowerCase().replace(/[.·]/g, " ").replace(/\s+/g, " ").trim();
   const known = legacyLabels.get(key);
   if (known) return known;
