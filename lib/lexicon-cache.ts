@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import { z } from "zod";
+import * as z from "zod/mini";
 import { languages, type Language, type WordDocument } from "./types";
 
 export type LexiconCache = {
@@ -16,19 +16,20 @@ const wordShape = z.object({
   inputWord: z.string(), normalizedWord: z.string(), word: z.string(),
   language: z.enum(languages), phonetic: z.string(),
   definitions: z.array(z.object({ partOfSpeech: z.string(), meaningZh: z.string() })),
-  grammar: z.object({
-    gender: z.enum(["masculine", "feminine", "neutral"]).optional(),
-    infinitive: z.string().optional(), baseForm: z.string().optional(), noteZh: z.string().optional(),
-  }).optional(),
+  grammar: z.optional(z.object({
+    gender: z.optional(z.enum(["masculine", "feminine", "neutral"])),
+    infinitive: z.optional(z.string()), baseForm: z.optional(z.string()), noteZh: z.optional(z.string()),
+  })),
   examples: z.array(z.object({ target: z.string(), translationZh: z.string() })),
-  monthGroup: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  monthGroup: z.string().check(z.regex(/^\d{4}-(0[1-9]|1[0-2])$/)),
   repetitions: z.number(), intervalDays: z.number(), easeFactor: z.number(),
-  nextReviewAt: z.number(), lastReviewedAt: z.number().optional(),
+  nextReviewAt: z.number(), lastReviewedAt: z.optional(z.number()),
   createdAt: z.number(), updatedAt: z.number(),
 });
+// Zod 4 numbers already reject Infinity and NaN.
 const cacheShape = z.object({
-  version: z.literal(2), userId: z.string(), language: z.enum(languages), updatedAt: z.number().finite(),
-  words: z.array(z.custom<WordDocument>((word) => wordShape.safeParse(word).success)).max(500),
+  version: z.literal(2), userId: z.string(), language: z.enum(languages), updatedAt: z.number(),
+  words: z.array(z.custom<WordDocument>((word) => wordShape.safeParse(word).success)).check(z.maxLength(500)),
 });
 
 interface CacheDatabase extends DBSchema {

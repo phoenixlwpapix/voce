@@ -7,7 +7,8 @@ import "./globals.css";
 const serif = Newsreader({ subsets: ["latin"], variable: "--font-newsreader", display: "swap" });
 const sans = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], variable: "--font-ibm-plex-mono", weight: ["400", "500"], display: "swap" });
-const ipa = Noto_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-noto-sans", weight: "400", display: "swap" });
+// IPA and Japanese glyphs appear only in word content, so they load on demand instead of competing with first paint.
+const ipa = Noto_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-noto-sans", weight: "400", display: "swap", preload: false });
 const japanese = Noto_Sans_JP({ variable: "--font-noto-sans-jp", weight: ["400", "500"], display: "swap" });
 
 export const metadata: Metadata = {

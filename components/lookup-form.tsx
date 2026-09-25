@@ -5,7 +5,7 @@ import { useOwnerSession } from "@/hooks/use-owner-session";
 import { ArrowLeftRight, ArrowUpRight, Languages, LoaderCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
+import * as z from "zod/mini";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +25,17 @@ import { getLocalMonthGroup } from "@/lib/month";
 import { cn } from "@/lib/utils";
 import { languages, type Language } from "@/lib/types";
 
-const inputSchema = z.string().trim().min(1, "Enter a word to look up.").max(maxWordLength, `Enter no more than ${maxWordLength} characters.`);
-const chineseInputSchema = z.string().trim()
-  .min(1, "请输入一个中文词语或短语。")
-  .max(maxChineseQueryLength, `请输入不超过 ${maxChineseQueryLength} 个字符。`)
-  .refine((value) => /\p{Script=Han}/u.test(value), "请输入包含中文的词语或短语。");
+const inputSchema = z.string().check(
+  z.trim(),
+  z.minLength(1, "Enter a word to look up."),
+  z.maxLength(maxWordLength, `Enter no more than ${maxWordLength} characters.`),
+);
+const chineseInputSchema = z.string().check(
+  z.trim(),
+  z.minLength(1, "请输入一个中文词语或短语。"),
+  z.maxLength(maxChineseQueryLength, `请输入不超过 ${maxChineseQueryLength} 个字符。`),
+  z.refine((value) => /\p{Script=Han}/u.test(value), "请输入包含中文的词语或短语。"),
+);
 
 type LookupMode = "foreign" | "chinese";
 
@@ -59,6 +65,8 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
   const [spelling, setSpelling] = useState<Extract<LookupActionResult, { status: "needs_confirmation" }> | null>(null);
   const [formChoice, setFormChoice] = useState<Extract<LookupActionResult, { status: "form_choice" }> | null>(null);
   const [translation, setTranslation] = useState<Extract<TranslationCandidateResult, { status: "candidates" }> | null>(null);
+  // Until the session arrives, `language` is only a placeholder; don't present it as the user's choice.
+  const languageKnown = account !== null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -190,13 +198,13 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
               <button
                 key={item}
                 type="button"
-                data-active={language === item}
+                data-active={languageKnown && language === item}
                 onClick={() => onLanguageChange(item)}
                 className={cn(
                   "min-h-10 border border-transparent px-3 font-mono text-[11px] tracking-[0.16em] text-muted-foreground outline-none transition-[color,background-color,border-color] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:font-medium data-[active=true]:text-foreground motion-reduce:transition-none sm:px-4",
                   languagePillClasses[item],
                 )}
-                aria-pressed={language === item}
+                aria-pressed={languageKnown && language === item}
                 aria-label={languageNames[item]}
               >
                 {item}
@@ -216,7 +224,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
                 setValue(event.target.value);
                 if (error) setError(null);
               }}
-              placeholder={mode === "chinese" ? chineseLookupPlaceholderByLanguage[language] : lookupPlaceholderByLanguage[language]}
+              placeholder={!languageKnown ? "" : mode === "chinese" ? chineseLookupPlaceholderByLanguage[language] : lookupPlaceholderByLanguage[language]}
               lang={mode === "chinese" ? "zh-CN" : localeByLanguage[language]}
               autoComplete="off"
               spellCheck={false}
@@ -234,7 +242,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
               aria-label={`Switch lookup direction to ${mode === "foreign" ? `Chinese to ${languageNames[language]}` : `${languageNames[language]} to Chinese`}`}
               title="Switch lookup direction"
             >
-              <span>{mode === "foreign" ? `${language} → 中文` : `中文 → ${language}`}</span>
+              <span>{!languageKnown ? "→ 中文" : mode === "foreign" ? `${language} → 中文` : `中文 → ${language}`}</span>
               <ArrowLeftRight className="size-3.5" aria-hidden="true" />
             </button>
             <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting || languageSwitching || !account} aria-label={submitting ? "Looking up" : mode === "chinese" ? "Find vocabulary" : "Look up and save"}>

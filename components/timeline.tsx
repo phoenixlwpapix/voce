@@ -1,6 +1,7 @@
 "use client";
 
 import { useCachedLexicon } from "@/hooks/use-cached-lexicon";
+import { useOwnerSession } from "@/hooks/use-owner-session";
 import { BookDashed, CalendarDays, Search, X } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 
@@ -46,6 +47,8 @@ function matchesSearch(word: WordDocument, query: string, language: Language) {
 
 export function Timeline({ language }: { language: Language }) {
   const { words } = useCachedLexicon(language);
+  // Until the session arrives, `language` is only a placeholder.
+  const languageKnown = useOwnerSession() !== null;
   const { available: speechAvailable, speak } = useSpeech();
   const [filterMonth, setFilterMonth] = useState("");
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
@@ -75,7 +78,9 @@ export function Timeline({ language }: { language: Language }) {
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4 sm:mb-7 sm:gap-5">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Archive · {language} · {searchQuery.trim() || filterMonth ? `${visibleWordCount} of ` : ""}{languageWords.length} words
+            {languageKnown && words !== undefined
+              ? <>Archive · {language} · {searchQuery.trim() || filterMonth ? `${visibleWordCount} of ` : ""}{languageWords.length} words</>
+              : "Archive"}
           </p>
           <h2 id="timeline-title" className="mt-1 font-serif text-[1.75rem] tracking-[-0.03em] sm:mt-2 sm:text-3xl">Vocabulary timeline</h2>
         </div>
@@ -88,7 +93,7 @@ export function Timeline({ language }: { language: Language }) {
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={`Search saved ${language} words`}
+              placeholder={languageKnown ? `Search saved ${language} words` : "Search saved words"}
               maxLength={80}
               autoComplete="off"
               className="h-10 pl-7 pr-8 font-mono text-xs [&::-webkit-search-cancel-button]:appearance-none"

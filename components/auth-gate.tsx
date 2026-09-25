@@ -9,6 +9,7 @@ import { decodeJwt } from "jose";
 import { usePathname } from "next/navigation";
 import { OwnerSessionContext, SignOutContext } from "@/hooks/use-owner-session";
 import { logPerf } from "@/lib/perf";
+import { clearCachedSession, readCachedSession, writeCachedSession } from "@/lib/session-cache";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -271,13 +272,20 @@ function SessionGate({ children, subject, signOut, inviteToken }: {
 }) {
   const session = useQuery(api.account.session, { subject });
   const pathname = usePathname();
+  // SessionGate is keyed by subject and only mounts on the client after auth resolves.
+  const [cachedSession] = useState(() => readCachedSession(subject));
   useEffect(() => {
-    if (session?.status === "ready") logPerf("owner ready");
-  }, [session?.status]);
+    if (session?.status === "ready") {
+      logPerf("owner ready");
+      writeCachedSession(subject, session);
+    } else if (session !== undefined) {
+      clearCachedSession();
+    }
+  }, [session, subject]);
 
   if (session === undefined) {
     return pathname === "/"
-      ? <OwnerSessionContext value={null}>{children}</OwnerSessionContext>
+      ? <OwnerSessionContext value={cachedSession}>{children}</OwnerSessionContext>
       : <LoadingScreen label="Checking your account…" />;
   }
   if (session.status === "setup") return <AccountSetup />;
@@ -320,6 +328,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   async function handleSignOut() {
     setSigningOut(true);
+    clearCachedSession();
     try {
       await signOut();
     } finally {
@@ -327,7 +336,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }
   if (signingOut) return <LoadingScreen label="Signing out…" />;
-  if (isLoading) return <LoadingScreen label="Checking your session…" />;
+  if (isLoading) {
+    // The workspace renders its own loading states without a session, so the
+    // home page paints its real layout (including in server HTML) instead of a spinner.
+    return pathname === "/"
+      ? <OwnerSessionContext value={null}>{children}</OwnerSessionContext>
+      : <LoadingScreen label="Checking your session…" />;
+  }
   if (!isAuthenticated || !subject) return <SignInScreen key={inviteToken ?? "regular"} invited={Boolean(inviteToken)} />;
   return (
     <SignOutContext value={handleSignOut}>
