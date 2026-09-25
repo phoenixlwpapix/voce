@@ -3,6 +3,8 @@ import { convexTest } from "convex-test";
 import { afterEach, expect, test, vi } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
+import rateLimiter from "@convex-dev/rate-limiter/test";
+import { rateLimiter as limiter } from "./rateLimits";
 
 const { generateContent } = vi.hoisted(() => ({ generateContent: vi.fn() }));
 vi.mock("@google/genai", () => ({
@@ -26,6 +28,7 @@ const spanishVocabulary = {
 async function setup() {
   vi.stubEnv("GEMINI_API_KEY", "test-only");
   const t = convexTest(schema, modules);
+  rateLimiter.register(t);
   const owner = await t.run(async (ctx) => {
     const userId = await ctx.db.insert("users", { email: "owner@example.test" });
     await ctx.db.insert("appOwners", { key: "primary", userId, createdAt: 1 });
@@ -430,4 +433,17 @@ test("a transcription that is still invalid after repair is not saved", async ()
     inputWord: "colgar", language: "ES", monthGroup: "2026-09",
   })).rejects.toThrow("couldn't be completed");
   expect(await t.query(api.words.getWordsByMonth, { language: "ES" })).toEqual([]);
+});
+
+test("lookups stop at the hourly generation limit before calling Gemini", async () => {
+  const t = await setup();
+  const ownerId = await t.run(async (ctx) => (await ctx.db.query("appOwners").first())!.userId);
+  await t.run(async (ctx) => {
+    await limiter.limit(ctx, "generation", { key: ownerId, count: 30 });
+  });
+
+  await expect(t.action(api.lookup.lookupAndSave, {
+    inputWord: "pain", language: "EN", monthGroup: "2026-09",
+  })).rejects.toThrow("hourly lookup limit");
+  expect(generateContent).not.toHaveBeenCalled();
 });

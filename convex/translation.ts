@@ -9,6 +9,7 @@ import type { Id } from "./_generated/dataModel";
 import { action } from "./_generated/server";
 import { normalizeWord, sanitizeInput, type Language } from "./normalization";
 import { languageValidator, translationCandidateResultValidator } from "./validators";
+import { consumeGenerationQuota } from "./rateLimits";
 import { partOfSpeechCodes, partOfSpeechLabel } from "../lib/parts-of-speech";
 import { definitionStyleInstruction, normalizeMeaningZh, normalizeNoteZh } from "../lib/entry-format";
 
@@ -100,6 +101,7 @@ export const findCandidates = action({
     if (!apiKey) {
       throw new ConvexError("The lookup service isn't configured. Contact the maintainer.");
     }
+    await consumeGenerationQuota(ctx, ownerId);
 
     try {
       const ai = new GoogleGenAI({ apiKey });

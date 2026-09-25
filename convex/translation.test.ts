@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { afterEach, expect, test, vi } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
+import rateLimiter from "@convex-dev/rate-limiter/test";
 
 const { generateContent } = vi.hoisted(() => ({ generateContent: vi.fn() }));
 vi.mock("@google/genai", () => ({
@@ -15,6 +16,7 @@ afterEach(() => { vi.unstubAllEnvs(); generateContent.mockReset(); });
 async function setup() {
   vi.stubEnv("GEMINI_API_KEY", "test-only");
   const t = convexTest(schema, modules);
+  rateLimiter.register(t);
   const owner = await t.run(async (ctx) => {
     const userId = await ctx.db.insert("users", { email: "owner@example.test" });
     await ctx.db.insert("appOwners", { key: "primary", userId, createdAt: 1 });

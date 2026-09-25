@@ -8,6 +8,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import { normalizeWord, sanitizeInput, type Language } from "./normalization";
+import { consumeGenerationQuota } from "./rateLimits";
 import { isPronominalVerb, partOfSpeechCodes, partOfSpeechLabel } from "../lib/parts-of-speech";
 import { normalizePhonetic, phoneticProblem } from "../lib/phonetics";
 import { definitionStyleInstruction, normalizeDefinitions, normalizeNoteZh, phoneticConvention } from "../lib/entry-format";
@@ -302,6 +303,7 @@ export async function lookupAndSaveForOwner(
   if (!apiKey) {
     throw new ConvexError("The lookup service isn't configured. Contact the maintainer.");
   }
+  await consumeGenerationQuota(ctx, args.ownerId);
 
   try {
     const ai = new GoogleGenAI({ apiKey });

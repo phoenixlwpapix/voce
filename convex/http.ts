@@ -105,7 +105,8 @@ http.route({
       }
       return jsonResponse(result.result);
     } catch (error) {
-      return jsonResponse({ error: getSafeLookupError(error) }, 502);
+      const message = getSafeLookupError(error);
+      return jsonResponse({ error: message }, message.includes("lookup limit") ? 429 : 502);
     }
   }),
 });
