@@ -50,13 +50,13 @@ export function isPronominalVerb(language: LexiconLanguage, forms: (string | und
 }
 
 const genderLabels = {
-  EN: { title: "Gender", masculine: "Masculine", feminine: "Feminine", neutral: "Neutral" },
-  FR: { title: "Genre", masculine: "masculin", feminine: "féminin", neutral: "neutre" },
-  ES: { title: "Género", masculine: "masculino", feminine: "femenino", neutral: "neutro" },
-  JA: { title: "性", masculine: "男性", feminine: "女性", neutral: "中性" },
+  EN: { title: "Gender", masculine: "Masculine", feminine: "Feminine", neutral: "Neutral", common: "Masculine or feminine" },
+  FR: { title: "Genre", masculine: "masculin", feminine: "féminin", neutral: "neutre", common: "épicène" },
+  ES: { title: "Género", masculine: "masculino", feminine: "femenino", neutral: "neutro", common: "común" },
+  JA: { title: "性", masculine: "男性", feminine: "女性", neutral: "中性", common: "通性" },
 } as const;
 
-export function genderLabel(language: LexiconLanguage, gender: "masculine" | "feminine" | "neutral"): string {
+export function genderLabel(language: LexiconLanguage, gender: "masculine" | "feminine" | "neutral" | "common"): string {
   const labels = genderLabels[language];
   return `${labels.title} · ${labels[gender]}`;
 }

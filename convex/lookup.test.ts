@@ -94,21 +94,46 @@ test("new Spanish nouns use one Spanish part-of-speech label and keep gender sep
   });
 });
 
-test("new Spanish nouns without gender and noncanonical part-of-speech values are not saved", async () => {
+test("a Spanish noun returned without gender gets it from one focused follow-up", async () => {
   const t = await setup();
   await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
-  const noun = {
-    ...spanishVocabulary,
-    word: "elogio",
-    definitions: [{ partOfSpeech: "noun", meaningZh: "赞美" }],
-  };
-  generateContent.mockResolvedValueOnce({ text: JSON.stringify(noun) });
-  await expect(t.action(api.lookup.lookupAndSave, {
-    inputWord: "elogio", language: "ES", monthGroup: "2026-09",
-  })).rejects.toThrow("The lookup couldn't be completed");
+  generateContent
+    .mockResolvedValueOnce({ text: JSON.stringify({
+      ...spanishVocabulary,
+      word: "sobresaliente",
+      phonetic: "sobɾesaˈljente",
+      definitions: [{ partOfSpeech: "adjective", meaningZh: "杰出的" }, { partOfSpeech: "noun", meaningZh: "优秀（成绩）" }],
+    }) })
+    .mockResolvedValueOnce({ text: JSON.stringify({ gender: "masculine" }) });
 
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "sobresaliente", language: "ES", monthGroup: "2026-09",
+  })).status).toBe("created");
+  expect((await t.query(api.words.getWordsByMonth, { language: "ES" }))[0].grammar).toEqual({ gender: "masculine" });
+});
+
+test("a noun whose gender cannot be determined is still saved", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
+  generateContent
+    .mockResolvedValueOnce({ text: JSON.stringify({
+      ...spanishVocabulary, word: "elogio", phonetic: "eˈloxjo",
+      definitions: [{ partOfSpeech: "noun", meaningZh: "赞美" }],
+    }) })
+    .mockRejectedValueOnce(new Error("timeout"));
+
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "elogio", language: "ES", monthGroup: "2026-09",
+  })).status).toBe("created");
+  expect((await t.query(api.words.getWordsByMonth, { language: "ES" }))[0].grammar).toBeUndefined();
+});
+
+test("noncanonical part-of-speech values are not saved", async () => {
+  const t = await setup();
+  await t.mutation(api.account.setPreferredLanguage, { language: "ES" });
   generateContent.mockResolvedValueOnce({ text: JSON.stringify({
-    ...noun, definitions: [{ partOfSpeech: "sustantivo masculino", meaningZh: "赞美" }],
+    ...spanishVocabulary, word: "elogio",
+    definitions: [{ partOfSpeech: "sustantivo masculino", meaningZh: "赞美" }],
     grammar: { gender: "masculine" },
   }) });
   await expect(t.action(api.lookup.lookupAndSave, {

@@ -67,6 +67,8 @@ const languageInstruction: Record<Language, string> = {
 export type TranslationCandidateResult = Infer<typeof translationCandidateResultValidator>;
 
 function safeGenerationError(error: unknown): never {
+  // The client only sees a generic message, so keep the cause in the logs.
+  console.error("Generation failed", error);
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (message.includes("429") || message.includes("rate") || message.includes("quota")) {
     throw new ConvexError("The lookup service is busy. Try again shortly.");

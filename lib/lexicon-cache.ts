@@ -17,7 +17,7 @@ const wordShape = z.object({
   language: z.enum(languages), phonetic: z.string(),
   definitions: z.array(z.object({ partOfSpeech: z.string(), meaningZh: z.string() })),
   grammar: z.optional(z.object({
-    gender: z.optional(z.enum(["masculine", "feminine", "neutral"])),
+    gender: z.optional(z.enum(["masculine", "feminine", "neutral", "common"])),
     infinitive: z.optional(z.string()), baseForm: z.optional(z.string()), noteZh: z.optional(z.string()),
   })),
   examples: z.array(z.object({ target: z.string(), translationZh: z.string() })),

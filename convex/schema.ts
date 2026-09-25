@@ -9,7 +9,7 @@ const definition = v.object({
 
 const grammar = v.object({
   gender: v.optional(
-    v.union(v.literal("masculine"), v.literal("feminine"), v.literal("neutral")),
+    v.union(v.literal("masculine"), v.literal("feminine"), v.literal("neutral"), v.literal("common")),
   ),
   infinitive: v.optional(v.string()),
   baseForm: v.optional(v.string()),

@@ -34,7 +34,7 @@ const vocabularyLookupSchema = z.object({
     .max(8),
   grammar: z
     .object({
-      gender: z.enum(["masculine", "feminine", "neutral"]).optional(),
+      gender: z.enum(["masculine", "feminine", "neutral", "common"]).optional(),
       infinitive: z.string().trim().min(1).max(100).optional(),
       baseForm: z.string().trim().min(1).max(maxWordLength).optional(),
       noteZh: z.string().trim().min(1).max(240).optional(),
@@ -105,7 +105,7 @@ const responseJsonSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        gender: { type: "string", enum: ["masculine", "feminine", "neutral"] },
+        gender: { type: "string", enum: ["masculine", "feminine", "neutral", "common"], description: "For French or Spanish nouns: masculine, feminine, or common when the same form takes either article (el/la estudiante, l'artiste)." },
         infinitive: { type: "string" },
         baseForm: { type: "string", description: "Dictionary headword for any genuine inflected form, including noun plurals, conjugated/reflexive verbs, and inflected adjectives. Omit for a headword or unrelated expression." },
         noteZh: { type: "string" },
@@ -134,6 +134,13 @@ const phoneticJsonSchema = {
   additionalProperties: false,
   properties: { phonetic: { type: "string" } },
   required: ["phonetic"],
+} as const;
+
+const genderJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: { gender: { type: "string", enum: ["masculine", "feminine", "common"] } },
+  required: ["gender"],
 } as const;
 
 const examplesJsonSchema = {
@@ -166,7 +173,7 @@ const languageInstruction: Record<Language, string> = {
 };
 
 const baseLexicographerInstruction =
-  "You are a precise multilingual lexicographer for Chinese learners. Return the requested valid form, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. For each partOfSpeech use only the exact category code from the schema, never an abbreviation, localized label, gender suffix, or multiple categories in one string. Classify reflexive/pronominal verbs as pronominal_verb. In the phonetic field, follow the transcription convention given for the selected language exactly. Never add slashes, brackets, pitch-accent numbers, or explanatory prose to the phonetic field. For every ordinary French or Spanish noun include grammar.gender as masculine or feminine, even when there are multiple noun senses; never put gender in partOfSpeech. For a genuine inflection, put its dictionary headword in grammar.baseForm: singular for plural nouns (children → child), infinitive for conjugated verbs, reflexive infinitive for conjugated reflexive verbs (me quejo → quejarse), and dictionary form for Japanese inflections. Only provide a base form when it is a reliable morphological relationship, never a synonym, translation, or spelling correction. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, also put the infinitive or Japanese dictionary form in grammar.infinitive. For Japanese vocabulary, use the grammar note for a concise usage note when helpful. Omit irrelevant grammar fields. Before returning, check that every example is grammatically correct and that its subject, finite verbs, pronouns, and possessives agree. Never use Markdown.";
+  "You are a precise multilingual lexicographer for Chinese learners. Return the requested valid form, concise Simplified Chinese definitions with part of speech, and exactly two natural bilingual examples. For each partOfSpeech use only the exact category code from the schema, never an abbreviation, localized label, gender suffix, or multiple categories in one string. Classify reflexive/pronominal verbs as pronominal_verb. In the phonetic field, follow the transcription convention given for the selected language exactly. Never add slashes, brackets, pitch-accent numbers, or explanatory prose to the phonetic field. For every French or Spanish word with a noun sense include grammar.gender as masculine, feminine, or common (the same form takes either article, as in el/la estudiante or l'artiste), even when the word is mainly an adjective or has several noun senses; never put gender in partOfSpeech. For a genuine inflection, put its dictionary headword in grammar.baseForm: singular for plural nouns (children → child), infinitive for conjugated verbs, reflexive infinitive for conjugated reflexive verbs (me quejo → quejarse), and dictionary form for Japanese inflections. Only provide a base form when it is a reliable morphological relationship, never a synonym, translation, or spelling correction. For conjugated French or Spanish verbs, or inflected Japanese verbs and adjectives, also put the infinitive or Japanese dictionary form in grammar.infinitive. For Japanese vocabulary, use the grammar note for a concise usage note when helpful. Omit irrelevant grammar fields. Before returning, check that every example is grammatically correct and that its subject, finite verbs, pronouns, and possessives agree. Never use Markdown.";
 
 const languageSpecificInstruction: Record<Language, string> = {
   EN: "Write idiomatic English examples with consistent person, number, and tense.",
@@ -234,6 +241,34 @@ export async function conventionalPhonetic(
   return repaired;
 }
 
+// Asks once for the gender of a French or Spanish noun the first response left
+// without one. A missing gender only costs a label, so failures return undefined.
+async function nounGender(
+  ai: GoogleGenAI,
+  language: Language,
+  word: string,
+  definitions: { partOfSpeech: string; meaningZh: string }[],
+): Promise<"masculine" | "feminine" | "common" | undefined> {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash-lite",
+      contents: JSON.stringify({ word, nounSenses: definitions.filter((definition) => definition.partOfSpeech === "noun") }),
+      config: {
+        systemInstruction: `Give the grammatical gender of the ${languageInstruction[language]} noun senses of this word: masculine, feminine, or common when the same form takes either article (el/la estudiante, l'artiste). When senses differ, give the gender of the most common noun sense. No explanations.`,
+        temperature: 0,
+        responseMimeType: "application/json",
+        responseJsonSchema: genderJsonSchema,
+        httpOptions: { timeout: 20_000 },
+      },
+    });
+    if (!response.text) return undefined;
+    const parsed = z.object({ gender: z.enum(["masculine", "feminine", "common"]) }).safeParse(JSON.parse(response.text) as unknown);
+    return parsed.success ? parsed.data.gender : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 type LookupForOwnerArgs = {
   ownerId: Id<"users">;
   inputWord: string;
@@ -243,6 +278,8 @@ type LookupForOwnerArgs = {
 };
 
 function safeGenerationError(error: unknown): never {
+  // The client only sees a generic message, so keep the cause in the logs.
+  console.error("Generation failed", error);
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (message.includes("429") || message.includes("rate") || message.includes("quota")) {
     throw new ConvexError("The lookup service is busy. Try again shortly.");
@@ -338,7 +375,8 @@ export async function lookupAndSaveForOwner(
     if ((language === "FR" || language === "ES") &&
       result.definitions.some((definition) => definition.partOfSpeech === "noun") &&
       !result.grammar?.gender) {
-      throw new Error("French or Spanish noun was returned without gender");
+      const gender = await nounGender(ai, language, result.word, result.definitions);
+      if (gender) result.grammar = { ...result.grammar, gender };
     }
     result.phonetic = await conventionalPhonetic(ai, language, result.word, result.phonetic);
     if (language === "ES" && needsSpanishReflexiveReview(generated)) {
