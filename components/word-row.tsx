@@ -88,7 +88,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
         </div>
       </div>
 
-      <div id={detailsId} className={cn("grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none", expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]")} aria-hidden={!expanded}>
+      <div id={detailsId} className={cn("grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none", expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]")} inert={!expanded}>
         <div className="overflow-hidden">
           <div className="grid gap-8 pb-8 pl-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] sm:pl-[calc(1.1fr)]">
             <div>
