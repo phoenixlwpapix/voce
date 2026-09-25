@@ -94,13 +94,32 @@ const legacyLabels = new Map<string, LegacyPartOfSpeech>([
   ] as const).map(([label, gender]) => [label, { code: "noun", gender }] as const),
 ]);
 
+const genderWords = new Map<string, "masculine" | "feminine">([
+  ["m", "masculine"], ["masc", "masculine"], ["masculine", "masculine"], ["masculino", "masculine"], ["masculin", "masculine"],
+  ["f", "feminine"], ["fem", "feminine"], ["feminine", "feminine"], ["femenino", "feminine"], ["féminin", "feminine"],
+]);
+// Qualifiers that say nothing about the category itself.
+const qualifierWords = new Set(["pl", "plural", "sing", "singular", "común", "commun", "common", "invariable", "inv"]);
+const categoryWords = new Map<string, PartOfSpeechCode>([["nombre", "noun"], ["sustantivo", "noun"], ["nom", "noun"], ["noun", "noun"]]);
+
 export function legacyPartOfSpeech(label: string): LegacyPartOfSpeech | null {
   // A combined label such as "adjective / adverb" keeps its first category.
   const parts = label.split(/\s*[/,;、，]\s*/u).filter(Boolean);
   if (parts.length > 1) return legacyPartOfSpeech(parts[0]);
-  const key = label.normalize("NFC").trim().toLowerCase().replace(/[.·]/g, " ").replace(/\s+/g, " ").trim();
+  const key = label.normalize("NFC").trim().toLowerCase().replace(/[.·()（）]/g, " ").replace(/\s+/g, " ").trim();
   const known = legacyLabels.get(key);
   if (known) return known;
+
+  // Category plus gender, number, or subtype: "noun (feminine)", "m. pl.",
+  // "sustantivo masculino plural", "verbo intransitivo", "locución verbal".
+  const words = key.split(" ");
+  const gender = words.map((word) => genderWords.get(word)).find((value) => value !== undefined);
+  const head = words.filter((word) => !genderWords.has(word) && !qualifierWords.has(word));
+  if (head.length === 0 && gender) return { code: "noun", gender };
+  if (/^(?:locución|locution|locuzione)$/u.test(head[0] ?? "") || head.at(-1) === "phrase") return { code: "phrase" };
+  const category = legacyLabels.get(head.join(" "))?.code ?? categoryWords.get(head[0] ?? "") ?? legacyLabels.get(head[0] ?? "")?.code;
+  if (category) return gender && category === "noun" ? { code: category, gender } : { code: category };
+
   // Chinese and Japanese verb subclasses such as 自动词五段 or 他動詞.
   if (/助[动動]词|助動詞/u.test(key)) return { code: "auxiliary_verb" };
   if (/形容[动動]/u.test(key)) return { code: "adjectival_noun" };

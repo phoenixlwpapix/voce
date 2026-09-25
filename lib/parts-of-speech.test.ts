@@ -33,6 +33,23 @@ test.each([
   ["phrasal verb", { code: "verb" }],
   ["形", { code: "adjective" }],
   ["adjective / adverb", { code: "adjective" }],
+  // Labels found in the production lexicon.
+  ["noun m", { code: "noun", gender: "masculine" }],
+  ["noun m.", { code: "noun", gender: "masculine" }],
+  ["noun f.", { code: "noun", gender: "feminine" }],
+  ["noun feminine", { code: "noun", gender: "feminine" }],
+  ["noun (feminine)", { code: "noun", gender: "feminine" }],
+  ["nombre femenino", { code: "noun", gender: "feminine" }],
+  ["m. pl.", { code: "noun", gender: "masculine" }],
+  ["sustantivo masculino plural", { code: "noun", gender: "masculine" }],
+  ["sustantivo común", { code: "noun" }],
+  ["noun phrase", { code: "phrase" }],
+  ["verb phrase", { code: "phrase" }],
+  ["locución verbal", { code: "phrase" }],
+  ["locución adjetiva", { code: "phrase" }],
+  ["locución adverbial", { code: "phrase" }],
+  ["locución preposicional", { code: "phrase" }],
+  ["verbo intransitivo", { code: "verb" }],
 ] as const)("maps the legacy label %s", (label, expected) => {
   expect(legacyPartOfSpeech(label)).toEqual(expected);
 });
