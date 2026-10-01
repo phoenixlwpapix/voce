@@ -3,7 +3,7 @@
 import { ArrowLeft, ArrowRight, Check, LoaderCircle, RotateCcw, Volume2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCachedLexicon } from "@/hooks/use-cached-lexicon";
 import { useOwnerSession } from "@/hooks/use-owner-session";
@@ -143,6 +143,7 @@ export function QuizSession() {
   const [lastMode, setLastMode] = useState<QuizMode>("mixed");
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [chosenIndex, setChosenIndex] = useState<number | null>(null);
+  const spokenQuestionId = useRef<string | null>(null);
 
   const languageWords = useMemo(
     () => (words ?? []).filter((word) => word.language === language),
@@ -157,21 +158,27 @@ export function QuizSession() {
     setQuestions(buildQuiz(pool, languageWords, { count, mode }));
     setAnswers([]);
     setChosenIndex(null);
+    spokenQuestionId.current = null;
   }
 
   const choose = useCallback((optionIndex: number) => {
     if (!current || chosenIndex !== null) return;
     setChosenIndex(optionIndex);
-    if (current.kind !== "word" && optionIndex === current.answerIndex && speechAvailable) {
-      speak(current.word.word, current.word.language);
-    }
-  }, [chosenIndex, current, speak, speechAvailable]);
+  }, [chosenIndex, current]);
 
   const next = useCallback(() => {
     if (!current || chosenIndex === null) return;
     setAnswers((existing) => [...existing, { question: current, chosenIndex }]);
     setChosenIndex(null);
   }, [chosenIndex, current]);
+
+  useEffect(() => {
+    if (!current || !speechAvailable) return;
+    if (current.kind === "meaning" && spokenQuestionId.current !== current.id) {
+      spokenQuestionId.current = current.id;
+      speak(current.word.word, current.word.language);
+    }
+  }, [current, speak, speechAvailable]);
 
   useEffect(() => {
     if (!current) return;
