@@ -232,7 +232,10 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
               aria-describedby={error ? "lookup-error" : undefined}
               aria-invalid={Boolean(error)}
               disabled={submitting || languageSwitching}
-              className="min-w-0 flex-1 border-b-0 font-serif text-lg focus:border-transparent sm:text-2xl"
+              className={cn(
+                "min-w-0 flex-1 border-b-0 font-serif text-lg focus:border-transparent sm:text-2xl placeholder:text-base sm:placeholder:text-lg",
+                mode === "chinese" && "placeholder:font-sans",
+              )}
             />
             <button
               type="button"
