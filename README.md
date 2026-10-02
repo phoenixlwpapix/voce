@@ -1,10 +1,10 @@
 # Voce
 
-Voce is a quiet, invitation-only multilingual vocabulary notebook where each account collects and reviews its own English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams each collection in real time, a deterministic two-button scheduler powers review, and a private Chrome companion saves words from any page.
+Voce is a quiet, invitation-only multilingual vocabulary notebook where each account collects and reviews its own English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams each collection in real time, a modern FSRS spaced repetition engine powers both flashcard review and adaptive quizzes, and a private Chrome companion saves words from any page.
 
-The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view keeps Review in the masthead and groups extension setup, appearance, CSV export, and sign-out in Settings on both phone and desktop. On phones, the heading and lookup form use less vertical space, lookup direction sits beside the input, and timeline search and month filtering share a row so the newest word and its Chinese meaning appear sooner. Month and count headings remain visible while scrolling each month's entries, until the next month takes over. Each vocabulary row toggles its full learning details when clicked or activated from the keyboard, while its pronunciation control remains independent. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
+The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view keeps Review and Quiz in the masthead and groups extension setup, appearance, CSV export, and sign-out in Settings on both phone and desktop. On phones, the heading and lookup form use less vertical space, lookup direction sits beside the input, and timeline search and month filtering share a row so the newest word and its Chinese meaning appear sooner. Month and count headings remain visible while scrolling each month's entries, until the next month takes over. Each vocabulary row toggles its full learning details when clicked or activated from the keyboard, while its pronunciation control remains independent. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
-Each account has one active learning language. New accounts start in English; choosing English, French, Spanish, or Japanese on the home screen saves that preference in Convex, filters the timeline at the query boundary, and restores the same language on the next visit or another device. Review opens directly into all due words for that active language.
+Each account has one active learning language. New accounts start in English; choosing English, French, Spanish, or Japanese on the home screen saves that preference in Convex, filters the timeline at the query boundary, and restores the same language on the next visit or another device. Review and Quiz open directly into the due queue for that active language.
 
 The timeline can export the vocabulary collection as a UTF-8 CSV for local use. Export defaults to the active learning language, with an optional all-languages range; the file includes pronunciation, Chinese definitions, grammar notes, examples, and record dates. Export reads the full matching collection through an authorized paginated query rather than being limited to the timeline's first 500 cached entries.
 
@@ -19,6 +19,7 @@ Production: https://voce-fawn.vercel.app
 - Next.js 16, React 19, TypeScript strict mode, App Router
 - Convex database, queries, mutations, and Node actions
 - Convex Auth email/password sessions with invitation-based per-user authorization
+- FSRS v5 (`ts-fsrs`) spaced repetition engine with retrievability sorting and review logging
 - Gemini `gemini-3.5-flash-lite` through the official `@google/genai` SDK
 - Tailwind CSS v4 and accessible Radix/shadcn-style primitives
 - Zod validation, Lucide icons, Sonner notifications
@@ -147,17 +148,50 @@ The live production backend for this project is `grateful-caterpillar-393` at `h
 
 The Gemini and JWT private keys must never be configured as public Next.js environment variables. Authentication is paired with server-side per-user authorization; every word, preference, and extension connection is scoped to the active user.
 
-## Review shortcuts
+## FSRS spaced repetition and quizzes
 
-Opening `/review` immediately starts the due queue for the account's active learning language. The language is changed only from the home screen; review does not accept a URL language override or ask for a separate language and date-range selection.
+Voce uses the modern **FSRS v5 (Free Spaced Repetition Scheduler)** model to schedule vocabulary reviews. Unlike fixed-growth algorithms, FSRS models memory Stability ($S$), Difficulty ($D$), and Retrievability ($R$) per word, factoring in overdue retrieval strength and fuzzing intervals to prevent synchronized review spikes.
+
+### Review and Quiz integration
+
+Vocabulary practice offers two modes that share the exact same underlying memory state and retry queue:
+- **Flashcard Review (`/review`)**: Active recall with two-sided cards.
+- **Multiple-Choice Quiz (`/quiz`)**: Adaptive 4-choice questions (testing meaning, target word, or contextual blank filling).
+
+### Due queue and new word pacing
+
+Opening `/review` or starting a `/quiz` queries the active learning language's due queue:
+- **Priority ordering**: Due words are ordered by retrievability $R$ ascending, presenting the most urgently forgotten cards first.
+- **New word cap**: Unreviewed words (`lastReviewedAt === undefined`) are capped at 15 words per day, protecting learners from overwhelming backlog debt when importing large batches.
+- **Day-boundary matching**: Due dates match the learner's local calendar day (`dayEnd: 23:59:59.999`) rather than volatile millisecond timestamps.
+
+### Lapse and retry lifecycle
+
+When a card fails or is answered incorrectly:
+1. **Immediate lapse**: A first-attempt mistake immediately grades the card as `Again`, updates its FSRS stability/difficulty, reschedules the next due date, and tags the word with `pendingRetryDay` for today.
+2. **Retry practice**: Missed cards are kept in today's retry round (in Quiz's "Retry missed" or Review's "Relearning"). Passing in retry clears `pendingRetryDay` without artificially inflating long-term memory stability. Subsequent failures during retry log the attempt without double-penalizing lapses.
+3. **Off-schedule practice**: Answering non-due words correctly leaves their schedule unchanged; answering incorrectly immediately logs a lapse and triggers rescheduling.
+4. **Idempotency & audit logs**: Every submission is written via `gradeWord` using `sessionId + questionId` deduplication and recorded in `reviewLogs` with response time (`responseMs`), question type, and rating.
+
+### Keyboard shortcuts
+
+**Flashcard review (`/review`):**
 
 | Key | Action |
 | --- | --- |
 | `Space` | Play pronunciation |
 | `Enter` | Flip the current card |
-| `1` | Mark as forgot after flipping |
-| `2` | Mark as remembered after flipping |
+| `1` | Mark as forgot after flipping (`Again`) |
+| `2` | Mark as remembered after flipping (`Good`) |
 | `Escape` | Return to the timeline |
+
+**Quiz (`/quiz`):**
+
+| Key | Action |
+| --- | --- |
+| `1`–`4` | Select option |
+| `Enter` | Advance to the next question / see results |
+| `Escape` | Exit to the timeline |
 
 Shortcuts are ignored while an input, textarea, select, or editable element is focused. Pronunciation uses the browser Web Speech API with exact-locale, language-prefix, then default-voice fallback.
 
@@ -193,4 +227,4 @@ Run `pnpm test` for IndexedDB isolation/corruption/failure tests and Convex init
 - Duplicate lookups return the existing entry before calling Gemini, leaving its generated content, review progress, and original month unchanged.
 - The home timeline and review queue both follow the persisted active learning language. Vocabulary and due-review queries filter by that language on the server; the timeline can instantly search its loaded entries by word, pronunciation, infinitive, grammar note, part of speech, or Chinese definition.
 - Gemini output is constrained by a JSON schema and validated again with Zod before any write.
-- Review interval calculations run inside the Convex mutation.
+- Review interval and memory scheduling run inside Convex transactions using FSRS with review log auditing.
