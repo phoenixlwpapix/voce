@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight, Check, LoaderCircle, RotateCcw, Volume2, X } fro
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { api } from "@/convex/_generated/api";
+import { useMutation } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { useCachedLexicon } from "@/hooks/use-cached-lexicon";
 import { useOwnerSession } from "@/hooks/use-owner-session";
@@ -11,6 +13,8 @@ import { useSpeech } from "@/hooks/use-speech";
 import { languageNames, localeByLanguage } from "@/lib/constants";
 import { formatPhonetic } from "@/lib/phonetics";
 import { buildQuiz, minimumQuizWords, quizEligibleWords, type QuizMode, type QuizQuestion } from "@/lib/quiz";
+import { toast } from "sonner";
+import { getUserErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import type { Language, WordDocument } from "@/lib/types";
 
@@ -38,6 +42,11 @@ function QuizSetup({ language, words, onStart }: {
   const [mode, setMode] = useState<QuizMode>("mixed");
   const available = quizEligibleWords(words, mode).length;
   const tooFew = words.length < minimumQuizWords;
+  const dueCount = useMemo(() => {
+    const dayStart = new Date().setHours(0, 0, 0, 0);
+    const dayEnd = new Date().setHours(23, 59, 59, 999);
+    return words.filter((word) => word.pendingRetryDay === dayStart || word.nextReviewAt <= dayEnd).length;
+  }, [words]);
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 py-5 sm:px-8 sm:py-7">
@@ -48,7 +57,12 @@ function QuizSetup({ language, words, onStart }: {
       <section className="flex flex-1 flex-col justify-center py-10">
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]} quiz</p>
         <h1 className="mt-3 font-serif text-[clamp(2.5rem,9vw,4rem)] leading-[0.95] tracking-[-0.05em]">Test what you&apos;ve kept.</h1>
-        <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Multiple-choice questions from your own lexicon. Quizzes are practice only and don&apos;t change your review schedule.</p>
+        <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Multiple-choice questions from your own lexicon. Words due for review are prioritized to help clear your backlog as you practice.</p>
+        {dueCount > 0 ? (
+          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            {dueCount} {dueCount === 1 ? "word" : "words"} due for review · prioritized
+          </p>
+        ) : null}
 
         {tooFew ? (
           <p className="mt-10 border-y border-border py-6 text-sm text-muted-foreground">Save at least {minimumQuizWords} {languageNames[language]} words to start a quiz.</p>
@@ -94,41 +108,69 @@ function QuizSetup({ language, words, onStart }: {
   );
 }
 
-function QuizResults({ language, answers, onRetryMissed, onNewQuiz }: {
+function QuizResults({
+  language,
+  answers,
+  gradeResults,
+  onRetryMissed,
+  onNewQuiz,
+}: {
   language: Language;
   answers: Answer[];
+  gradeResults: Record<string, { applied: boolean; pendingRetry: boolean; nextReviewAt: number }>;
   onRetryMissed: () => void;
   onNewQuiz: () => void;
 }) {
   const missed = answers.filter((answer) => answer.chosenIndex !== answer.question.answerIndex);
   const score = answers.length - missed.length;
   const percent = answers.length ? Math.round((score / answers.length) * 100) : 0;
+  const appliedCount = Object.values(gradeResults).filter((r) => r.applied).length;
+  const pendingCount = Object.values(gradeResults).filter((r) => r.pendingRetry).length;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-16 sm:px-8">
-      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]} quiz complete</p>
-      <h1 className="mt-3 font-serif text-6xl tracking-[-0.05em]">{score} <span className="text-muted-foreground">/ {answers.length}</span></h1>
-      <p className="mt-3 text-sm text-muted-foreground">{percent}% correct{missed.length === 0 ? " — a clean sheet." : "."}</p>
+    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 py-5 sm:px-8 sm:py-7">
+      <header className="flex items-center justify-between">
+        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back</Link></Button>
+        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{language} · Quiz complete</p>
+      </header>
+      <section className="flex flex-1 flex-col justify-center py-10">
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]} quiz complete</p>
+        <h1 className="mt-3 font-serif text-6xl tracking-[-0.05em]">{score} <span className="text-muted-foreground">/ {answers.length}</span></h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {percent}% correct{missed.length === 0 ? " — a clean sheet." : "."}
+        </p>
 
-      {missed.length > 0 ? (
-        <section className="mt-10 border-t border-border pt-6" aria-labelledby="missed-title">
-          <h2 id="missed-title" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Missed words</h2>
-          <ul className="mt-3 divide-y divide-border">
-            {missed.map(({ question }) => (
-              <li key={question.id} className="flex items-baseline justify-between gap-4 py-3">
-                <span lang={localeByLanguage[question.word.language]} className={cn("font-serif text-xl", question.word.language === "JA" && "font-ja")}>{question.word.word}</span>
-                <span lang="zh-CN" className="text-right text-sm text-muted-foreground">{question.word.definitions[0]?.meaningZh}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+        {(appliedCount > 0 || pendingCount > 0) ? (
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted-foreground">
+            {appliedCount > 0 ? (
+              <span>✓ {appliedCount} {appliedCount === 1 ? "word" : "words"} advanced (FSRS)</span>
+            ) : null}
+            {pendingCount > 0 ? (
+              <span className="text-destructive">⚠ {pendingCount} {pendingCount === 1 ? "word" : "words"} need retry</span>
+            ) : null}
+          </div>
+        ) : null}
 
-      <div className="mt-10 flex flex-wrap gap-3">
-        {missed.length > 0 ? <Button onClick={onRetryMissed}><RotateCcw className="size-4" aria-hidden="true" />Retry missed ({missed.length})</Button> : null}
-        <Button variant={missed.length > 0 ? "outline" : "default"} onClick={onNewQuiz}>New quiz</Button>
-        <Button asChild variant="ghost"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link></Button>
-      </div>
+        {missed.length > 0 ? (
+          <section className="mt-10 border-t border-border pt-6" aria-labelledby="missed-title">
+            <h2 id="missed-title" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Missed words</h2>
+            <ul className="mt-3 divide-y divide-border">
+              {missed.map(({ question }) => (
+                <li key={question.id} className="flex items-baseline justify-between gap-4 py-3">
+                  <span lang={localeByLanguage[question.word.language]} className={cn("font-serif text-xl", question.word.language === "JA" && "font-ja")}>{question.word.word}</span>
+                  <span lang="zh-CN" className="text-right text-sm text-muted-foreground">{question.word.definitions[0]?.meaningZh}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <div className="mt-10 flex flex-wrap gap-3">
+          {missed.length > 0 ? <Button onClick={onRetryMissed}><RotateCcw className="size-4" aria-hidden="true" />Retry missed ({missed.length})</Button> : null}
+          <Button variant={missed.length > 0 ? "outline" : "default"} onClick={onNewQuiz}>New quiz</Button>
+          <Button asChild variant="ghost"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link></Button>
+        </div>
+      </section>
     </main>
   );
 }
@@ -138,12 +180,19 @@ export function QuizSession() {
   const router = useRouter();
   const language = account?.preferredLanguage;
   const { words } = useCachedLexicon(language ?? "EN");
+  const gradeWord = useMutation(api.words.gradeWord);
   const { available: speechAvailable, speak } = useSpeech();
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null);
   const [lastMode, setLastMode] = useState<QuizMode>("mixed");
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [chosenIndex, setChosenIndex] = useState<number | null>(null);
   const spokenQuestionId = useRef<string | null>(null);
+  const sessionId = useRef<string>("");
+  const attemptCounts = useRef<Record<string, number>>({});
+  const questionRenderTime = useRef<number>(0);
+  const [gradeResults, setGradeResults] = useState<
+    Record<string, { applied: boolean; pendingRetry: boolean; nextReviewAt: number }>
+  >({});
 
   const languageWords = useMemo(
     () => (words ?? []).filter((word) => word.language === language),
@@ -153,18 +202,53 @@ export function QuizSession() {
   const current = questions?.[index];
   const finished = questions !== null && current === undefined;
 
-  function start(pool: WordDocument[], count: number, mode: QuizMode) {
+  function start(pool: WordDocument[], count: number, mode: QuizMode, isRetry = false) {
+    if (!isRetry) {
+      sessionId.current =
+        typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+      attemptCounts.current = {};
+      setGradeResults({});
+    }
     setLastMode(mode);
     setQuestions(buildQuiz(pool, languageWords, { count, mode }));
     setAnswers([]);
     setChosenIndex(null);
     spokenQuestionId.current = null;
+    questionRenderTime.current = Date.now();
   }
+
+  useEffect(() => {
+    questionRenderTime.current = Date.now();
+  }, [current?.id]);
 
   const choose = useCallback((optionIndex: number) => {
     if (!current || chosenIndex !== null) return;
     setChosenIndex(optionIndex);
-  }, [chosenIndex, current]);
+    const isCorrect = optionIndex === current.answerIndex;
+    const responseMs =
+      questionRenderTime.current > 0 ? Math.max(100, Date.now() - questionRenderTime.current) : 1000;
+    const wordId = current.word._id;
+    const attemptNo = (attemptCounts.current[wordId] ?? 0) + 1;
+    attemptCounts.current[wordId] = attemptNo;
+    const questionId = `${sessionId.current}:${wordId}:${attemptNo}`;
+    const dayStartMs = new Date().setHours(0, 0, 0, 0);
+
+    void gradeWord({
+      id: wordId,
+      sessionId: sessionId.current,
+      questionId,
+      correct: isCorrect,
+      questionType: "choice",
+      responseMs,
+      dayStartMs,
+    })
+      .then((res) => {
+        setGradeResults((prev) => ({ ...prev, [wordId]: res }));
+      })
+      .catch((error) => {
+        toast.error(getUserErrorMessage(error));
+      });
+  }, [chosenIndex, current, gradeWord]);
 
   const next = useCallback(() => {
     if (!current || chosenIndex === null) return;
@@ -226,7 +310,8 @@ export function QuizSession() {
       <QuizResults
         language={language}
         answers={answers}
-        onRetryMissed={() => start(missedWords, missedWords.length, lastMode)}
+        gradeResults={gradeResults}
+        onRetryMissed={() => start(missedWords, missedWords.length, lastMode, true)}
         onNewQuiz={() => setQuestions(null)}
       />
     );

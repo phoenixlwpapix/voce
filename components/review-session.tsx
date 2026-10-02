@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { ArrowLeft, Check, CornerDownLeft, LoaderCircle, RotateCcw, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { LanguageBadge } from "@/components/language-badge";
@@ -60,16 +60,20 @@ export function ReviewSession() {
   const account = useOwnerSession();
   const router = useRouter();
   const language = account?.preferredLanguage;
-  const [queryTime] = useState(() => Date.now());
+  const [dayStartMs] = useState(() => new Date().setHours(0, 0, 0, 0));
   const queue = useQuery(
-    api.words.getReviewQueue,
-    language ? { language, now: queryTime } : "skip",
+    api.words.getDueQueue,
+    language ? { language, dayStartMs } : "skip",
   );
-  const updateReviewState = useMutation(api.words.updateReviewState);
+  const gradeWord = useMutation(api.words.gradeWord);
   const { available: speechAvailable, speak } = useSpeech();
+  const [sessionId] = useState(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+  );
+  const attemptCounts = useRef<Record<string, number>>({});
+  const cardRenderTime = useRef<number>(0);
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(() => new Set());
-  // Forgotten cards come back at the end of the session for practice. Their
-  // schedule was already saved when they were first rated, so repeats stay local.
+  // Forgotten cards come back at the end of the session for practice.
   const [relearning, setRelearning] = useState<WordDocument[]>([]);
   const [flippedId, setFlippedId] = useState<string | null>(null);
   const [rating, setRating] = useState(false);
@@ -78,6 +82,10 @@ export function ReviewSession() {
   const isRelearning = dueCard === undefined && current !== undefined;
   const flipped = current !== undefined && flippedId === current._id;
 
+  useEffect(() => {
+    cardRenderTime.current = Date.now();
+  }, [current?._id]);
+
   const playCurrent = useCallback(() => {
     if (current) speak(current.word, current.language);
   }, [current, speak]);
@@ -85,16 +93,31 @@ export function ReviewSession() {
   const rateCurrent = useCallback(
     async (outcome: "forgot" | "remembered") => {
       if (!current || !flipped || rating) return;
-      if (isRelearning) {
-        setRelearning((cards) => outcome === "forgot" ? [...cards.slice(1), cards[0]] : cards.slice(1));
-        setFlippedId(null);
-        return;
-      }
+      const wordId = current._id;
+      const isCorrect = outcome === "remembered";
+      const attemptNo = (attemptCounts.current[wordId] ?? 0) + 1;
+      attemptCounts.current[wordId] = attemptNo;
+      const questionId = `${sessionId}:${wordId}:${attemptNo}`;
+      const responseMs = cardRenderTime.current > 0 ? Math.max(100, Date.now() - cardRenderTime.current) : 1000;
+
       setRating(true);
       try {
-        await updateReviewState({ id: current._id, outcome });
-        setReviewedIds((existing) => new Set(existing).add(current._id));
-        if (outcome === "forgot") setRelearning((cards) => [...cards, current]);
+        await gradeWord({
+          id: wordId,
+          sessionId,
+          questionId,
+          correct: isCorrect,
+          questionType: "recall",
+          responseMs,
+          dayStartMs,
+        });
+
+        if (isRelearning) {
+          setRelearning((cards) => (outcome === "forgot" ? [...cards.slice(1), cards[0]] : cards.slice(1)));
+        } else {
+          setReviewedIds((existing) => new Set(existing).add(wordId));
+          if (outcome === "forgot") setRelearning((cards) => [...cards, current]);
+        }
         setFlippedId(null);
       } catch (error) {
         toast.error(getUserErrorMessage(error));
@@ -102,7 +125,7 @@ export function ReviewSession() {
         setRating(false);
       }
     },
-    [current, flipped, isRelearning, rating, updateReviewState],
+    [current, dayStartMs, flipped, gradeWord, isRelearning, rating, sessionId],
   );
 
   useEffect(() => {

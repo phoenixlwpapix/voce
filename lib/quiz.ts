@@ -64,7 +64,9 @@ export function blankExample(word: WordDocument): { sentence: string; translatio
 
 // Due, new, and never-reviewed words come up more often.
 function quizWeight(word: WordDocument, now: number) {
-  return 1 + (word.nextReviewAt <= now ? 2 : 0) + (word.repetitions === 0 ? 1 : 0);
+  const isDue = word.pendingRetryDay !== undefined || word.nextReviewAt <= now;
+  const isNew = word.lastReviewedAt === undefined || word.repetitions === 0;
+  return 1 + (isDue ? 2 : 0) + (isNew ? 1 : 0);
 }
 
 // Weighted sampling without replacement (Efraimidis–Spirakis).
@@ -119,13 +121,28 @@ export function quizEligibleWords(words: WordDocument[], mode: QuizMode) {
 
 // Builds up to `count` multiple-choice questions about `pool`, drawing wrong
 // options from `allWords` (the whole lexicon in the same language).
+// Words due for review are prioritized first to clear the review backlog.
 export function buildQuiz(
   pool: WordDocument[],
   allWords: WordDocument[],
   { count, mode, now = Date.now(), random = Math.random }: { count: number; mode: QuizMode; now?: number; random?: Random },
 ): QuizQuestion[] {
   if (allWords.length < minimumQuizWords) return [];
-  const chosen = sampleWeighted(quizEligibleWords(pool, mode), count, now, random);
+  const eligible = quizEligibleWords(pool, mode);
+  const dueWords = eligible.filter((word) => word.pendingRetryDay !== undefined || word.nextReviewAt <= now);
+
+  let chosen: WordDocument[];
+  if (dueWords.length >= count) {
+    chosen = sampleWeighted(dueWords, count, now, random);
+  } else if (dueWords.length > 0) {
+    const dueSet = new Set(dueWords.map((word) => word._id));
+    const nonDueWords = eligible.filter((word) => !dueSet.has(word._id));
+    const fillCount = count - dueWords.length;
+    const filled = sampleWeighted(nonDueWords, fillCount, now, random);
+    chosen = shuffle([...dueWords, ...filled], random);
+  } else {
+    chosen = sampleWeighted(eligible, count, now, random);
+  }
   const questions: QuizQuestion[] = [];
 
   for (const word of chosen) {

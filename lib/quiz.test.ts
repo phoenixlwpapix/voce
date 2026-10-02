@@ -60,3 +60,17 @@ test("blanks only whole-word occurrences of the headword", () => {
     .toBe(`El ${quizBlank} está en calma. Mariana nada.`);
   expect(blankExample(word("y", "mar", "海", "sustantivo", "Mariana nada."))).toBeNull();
 });
+
+test("prioritizes due words over non-due words", () => {
+  // Give only 2 words nextReviewAt <= 5, others nextReviewAt = 100
+  const mixedLexicon = lexicon.map((w, index) => ({
+    ...w,
+    nextReviewAt: index < 2 ? 0 : 100,
+  }));
+  const questions = buildQuiz(mixedLexicon, mixedLexicon, { count: 2, mode: "meaning", now: 10, random });
+  expect(questions).toHaveLength(2);
+  const pickedIds = questions.map((q) => q.word._id);
+  expect(pickedIds).toContain("1");
+  expect(pickedIds).toContain("2");
+});
+

@@ -103,6 +103,12 @@ export default defineSchema({
     easeFactor: v.number(),
     nextReviewAt: v.number(),
     lastReviewedAt: v.optional(v.number()),
+    stability: v.optional(v.number()),
+    difficulty: v.optional(v.number()),
+    scheduledDays: v.optional(v.number()),
+    fsrsState: v.optional(v.number()),
+    lapses: v.optional(v.number()),
+    pendingRetryDay: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -113,12 +119,33 @@ export default defineSchema({
     .index("by_ownerId_createdAt", ["ownerId", "createdAt"])
     .index("by_ownerId_monthGroup", ["ownerId", "monthGroup"])
     .index("by_ownerId_nextReviewAt", ["ownerId", "nextReviewAt"])
+    .index("by_ownerId_pendingRetryDay", ["ownerId", "pendingRetryDay"])
     .index("by_ownerId_language_createdAt", ["ownerId", "language", "createdAt"])
     .index("by_ownerId_language_monthGroup", ["ownerId", "language", "monthGroup"])
     .index("by_ownerId_language_nextReviewAt", ["ownerId", "language", "nextReviewAt"])
+    .index("by_ownerId_language_pendingRetryDay", [
+      "ownerId",
+      "language",
+      "pendingRetryDay",
+    ])
     .index("by_ownerId_language_normalizedWord", [
       "ownerId",
       "language",
       "normalizedWord",
     ]),
+  reviewLogs: defineTable({
+    ownerId: v.id("users"),
+    wordId: v.id("words"),
+    sessionId: v.string(),
+    questionId: v.string(),
+    questionType: v.union(v.literal("choice"), v.literal("recall")),
+    correct: v.boolean(),
+    rating: v.optional(v.number()),
+    applied: v.boolean(),
+    responseMs: v.number(),
+    reviewedAt: v.number(),
+  })
+    .index("by_sessionId_questionId", ["sessionId", "questionId"])
+    .index("by_wordId", ["wordId"])
+    .index("by_ownerId_reviewedAt", ["ownerId", "reviewedAt"]),
 });
