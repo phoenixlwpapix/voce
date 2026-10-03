@@ -1,9 +1,9 @@
 export function getUserErrorMessage(error: unknown) {
   if (!navigator.onLine) {
-    return "You're offline. Reconnect and try again.";
+    return "当前处于离线状态，请检查网络连接后重试。";
   }
   if (error && typeof error === "object" && "data" in error && typeof error.data === "string") {
     return error.data;
   }
-  return "The request couldn't be completed. Try again shortly.";
+  return "请求未能完成，请稍后重试。";
 }

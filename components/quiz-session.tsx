@@ -20,12 +20,12 @@ import type { Language, WordDocument } from "@/lib/types";
 
 const questionCounts = [10, 20, 30] as const;
 const modes: { value: QuizMode; label: string; description: string }[] = [
-  { value: "mixed", label: "Mixed", description: "All question types" },
-  { value: "meaning", label: "Word → 中文", description: "Choose the meaning" },
-  { value: "word", label: "中文 → Word", description: "Choose the word" },
-  { value: "context", label: "Fill the blank", description: "Complete an example" },
+  { value: "mixed", label: "混合模式", description: "涵盖所有题型" },
+  { value: "meaning", label: "看词识义", description: "外语 → 中文释义" },
+  { value: "word", label: "看义选词", description: "中文 → 外语单词" },
+  { value: "context", label: "例句填空", description: "根据语境补全例句" },
 ];
-const kindLabels = { meaning: "Choose the meaning", word: "Choose the word", context: "Fill in the blank" } as const;
+const kindLabels = { meaning: "选择正确的中文释义", word: "选择对应的外语单词", context: "根据语境完成填空" } as const;
 
 type Answer = { question: QuizQuestion; chosenIndex: number };
 
@@ -51,25 +51,25 @@ function QuizSetup({ language, words, onStart }: {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back</Link></Button>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{language} · {words.length} words</p>
+        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回</Link></Button>
+        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{languageNames[language]} · {words.length} 词</p>
       </header>
       <section className="flex flex-1 flex-col justify-center py-10">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]} quiz</p>
-        <h1 className="mt-3 font-serif text-[clamp(2.5rem,9vw,4rem)] leading-[0.95] tracking-[-0.05em]">Test what you&apos;ve kept.</h1>
-        <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Multiple-choice questions from your own lexicon. Words due for review are prioritized to help clear your backlog as you practice.</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]}测验</p>
+        <h1 className="mt-3 font-serif text-[clamp(2.5rem,9vw,4rem)] leading-[0.95] tracking-[-0.05em]">检验你的词汇积累</h1>
+        <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">基于你个人生词本生成的四选一练习题。优先抽取待复习词汇，边练边推进记忆周期。</p>
         {dueCount > 0 ? (
           <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            {dueCount} {dueCount === 1 ? "word" : "words"} due for review · prioritized
+            {dueCount} 个待复习词汇 · 优先测验
           </p>
         ) : null}
 
         {tooFew ? (
-          <p className="mt-10 border-y border-border py-6 text-sm text-muted-foreground">Save at least {minimumQuizWords} {languageNames[language]} words to start a quiz.</p>
+          <p className="mt-10 border-y border-border py-6 text-sm text-muted-foreground">生词本中至少需要保存 {minimumQuizWords} 个{languageNames[language]}词汇才能开始测验。</p>
         ) : (
           <>
             <fieldset className="mt-10">
-              <legend className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Questions</legend>
+              <legend className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">题目数量</legend>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {questionCounts.map((value) => (
                   <button key={value} type="button" onClick={() => setCount(value)} aria-pressed={count === value}
@@ -80,7 +80,7 @@ function QuizSetup({ language, words, onStart }: {
               </div>
             </fieldset>
             <fieldset className="mt-7">
-              <legend className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Question type</legend>
+              <legend className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">题型设置</legend>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {modes.map((option) => (
                   <button key={option.value} type="button" onClick={() => setMode(option.value)} aria-pressed={mode === option.value}
@@ -92,13 +92,13 @@ function QuizSetup({ language, words, onStart }: {
               </div>
             </fieldset>
             <Button className="mt-10 h-12" disabled={available === 0} onClick={() => onStart(count, mode)}>
-              Start {Math.min(count, available)}-question quiz<ArrowRight className="size-4" aria-hidden="true" />
+              开始 {Math.min(count, available)} 题测验<ArrowRight className="size-4" aria-hidden="true" />
             </Button>
             {available < count ? (
               <p className="mt-3 text-xs text-muted-foreground">
                 {available === 0
-                  ? "None of your saved examples contain their headword unchanged, so there are no blanks to fill yet."
-                  : `Only ${available} of your words fit this question type.`}
+                  ? "已保存的例句中没有包含原形未变的词汇，暂无可用填空题。"
+                  : `仅有 ${available} 个词汇符合当前题型要求。`}
               </p>
             ) : null}
           </>
@@ -130,30 +130,30 @@ function QuizResults({
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back</Link></Button>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{language} · Quiz complete</p>
+        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回</Link></Button>
+        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{languageNames[language]} · 测验完成</p>
       </header>
       <section className="flex flex-1 flex-col justify-center py-10">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]} quiz complete</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]}测验完成</p>
         <h1 className="mt-3 font-serif text-6xl tracking-[-0.05em]">{score} <span className="text-muted-foreground">/ {answers.length}</span></h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          {percent}% correct{missed.length === 0 ? " — a clean sheet." : "."}
+          {percent}% 正确率{missed.length === 0 ? " — 全部答对！" : "。"}
         </p>
 
         {(appliedCount > 0 || pendingCount > 0) ? (
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted-foreground">
             {appliedCount > 0 ? (
-              <span>✓ {appliedCount} {appliedCount === 1 ? "word" : "words"} advanced (FSRS)</span>
+              <span>✓ {appliedCount} 个词汇已推进记忆周期 (FSRS)</span>
             ) : null}
             {pendingCount > 0 ? (
-              <span className="text-destructive">⚠ {pendingCount} {pendingCount === 1 ? "word" : "words"} need retry</span>
+              <span className="text-destructive">⚠ {pendingCount} 个词汇需重新复习</span>
             ) : null}
           </div>
         ) : null}
 
         {missed.length > 0 ? (
           <section className="mt-10 border-t border-border pt-6" aria-labelledby="missed-title">
-            <h2 id="missed-title" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Missed words</h2>
+            <h2 id="missed-title" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">答错词汇</h2>
             <ul className="mt-3 divide-y divide-border">
               {missed.map(({ question }) => (
                 <li key={question.id} className="flex items-baseline justify-between gap-4 py-3">
@@ -166,9 +166,9 @@ function QuizResults({
         ) : null}
 
         <div className="mt-10 flex flex-wrap gap-3">
-          {missed.length > 0 ? <Button onClick={onRetryMissed}><RotateCcw className="size-4" aria-hidden="true" />Retry missed ({missed.length})</Button> : null}
-          <Button variant={missed.length > 0 ? "outline" : "default"} onClick={onNewQuiz}>New quiz</Button>
-          <Button asChild variant="ghost"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link></Button>
+          {missed.length > 0 ? <Button onClick={onRetryMissed}><RotateCcw className="size-4" aria-hidden="true" />重做错题 ({missed.length})</Button> : null}
+          <Button variant={missed.length > 0 ? "outline" : "default"} onClick={onNewQuiz}>再来一组</Button>
+          <Button asChild variant="ghost"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回生词本</Link></Button>
         </div>
       </section>
     </main>
@@ -284,7 +284,7 @@ export function QuizSession() {
   }, [choose, chosenIndex, current, next, router]);
 
   if (!language || words === undefined) {
-    return <main className="grid min-h-dvh place-items-center"><div className="text-center"><LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" aria-hidden="true" /><p className="mt-4 text-sm text-muted-foreground">Gathering your words…</p></div></main>;
+    return <main className="grid min-h-dvh place-items-center"><div className="text-center"><LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" aria-hidden="true" /><p className="mt-4 text-sm text-muted-foreground">正在准备题目…</p></div></main>;
   }
 
   if (questions === null) {
@@ -295,8 +295,8 @@ export function QuizSession() {
     return (
       <main className="grid min-h-dvh place-items-center px-5 text-center">
         <div className="max-w-md">
-          <p className="text-sm text-muted-foreground">Your {languageNames[language]} words don&apos;t have enough distinct meanings for four-option questions yet.</p>
-          <Button variant="outline" className="mt-6" onClick={() => setQuestions(null)}>Back to quiz setup</Button>
+          <p className="text-sm text-muted-foreground">你的{languageNames[language]}生词暂未包含足够多的不同释义来生成四选一选项。</p>
+          <Button variant="outline" className="mt-6" onClick={() => setQuestions(null)}>返回测验设置</Button>
         </div>
       </main>
     );
@@ -327,12 +327,12 @@ export function QuizSession() {
   return (
     <main className="flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between">
-        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Exit</Link></Button>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{language} · Quiz · {String(index + 1).padStart(2, "0")} / {String(questions.length).padStart(2, "0")}</p>
+        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />退出</Link></Button>
+        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{languageNames[language]} · 测验 · {String(index + 1).padStart(2, "0")} / {String(questions.length).padStart(2, "0")}</p>
         <Button type="button" variant="ghost" size="icon" onClick={() => speak(question.word.word, question.word.language)}
           disabled={!speechAvailable || (question.kind !== "meaning" && !answered)}
-          aria-label={`Pronounce ${question.kind === "meaning" || answered ? question.word.word : "the answer"}`}
-          title={question.kind !== "meaning" && !answered ? "Available after you answer" : "Play pronunciation"}>
+          aria-label={`朗读 ${question.kind === "meaning" || answered ? question.word.word : "正确答案"}`}
+          title={question.kind !== "meaning" && !answered ? "答题后可播放发音" : "播放发音"}>
           <Volume2 className="size-4" aria-hidden="true" />
         </Button>
       </header>
@@ -366,7 +366,7 @@ export function QuizSession() {
                   type="button"
                   onClick={() => choose(optionIndex)}
                   disabled={answered}
-                  aria-label={`${optionIndex + 1}. ${option}${answered && isAnswer ? " (correct answer)" : ""}${answered && isChosen && !isAnswer ? " (your answer)" : ""}`}
+                  aria-label={`${optionIndex + 1}. ${option}${answered && isAnswer ? " (正确答案)" : ""}${answered && isChosen && !isAnswer ? " (你的选择)" : ""}`}
                   className={cn(
                     "flex min-h-14 w-full items-center gap-3 border border-border px-4 py-3 text-left outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:hover:bg-transparent motion-reduce:transition-none",
                     answered && isAnswer && "border-success bg-success/10 disabled:hover:bg-success/10",
@@ -391,18 +391,18 @@ export function QuizSession() {
 
         <div className="mt-7 flex min-h-12 items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground" role="status">
-            {answered ? (correct ? "Correct." : <>The answer is <b className="font-medium text-foreground">{question.options[question.answerIndex]}</b>.</>) : null}
+            {answered ? (correct ? "回答正确。" : <>正确答案是 <b className="font-medium text-foreground">{question.options[question.answerIndex]}</b>。</>) : null}
           </p>
           {answered ? (
             <Button onClick={next} autoFocus>
-              {index + 1 === questions.length ? "See results" : "Next"}<ArrowRight className="size-4" aria-hidden="true" />
+              {index + 1 === questions.length ? "查看成绩" : "下一题"}<ArrowRight className="size-4" aria-hidden="true" />
             </Button>
           ) : null}
         </div>
       </section>
 
       <footer className="mx-auto hidden w-full max-w-3xl justify-center gap-6 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:flex">
-        <span>1–4 · Answer</span><span>Enter · Next</span><span>Esc · Exit</span>
+        <span>1–4 · 选择</span><span>Enter · 下一题</span><span>Esc · 退出</span>
       </footer>
     </main>
   );

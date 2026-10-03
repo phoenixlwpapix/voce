@@ -8,10 +8,10 @@ export const localeByLanguage: Record<Language, string> = {
 };
 
 export const languageNames: Record<Language, string> = {
-  EN: "English",
-  FR: "French",
-  ES: "Spanish",
-  JA: "Japanese",
+  EN: "英语",
+  FR: "法语",
+  ES: "西班牙语",
+  JA: "日语",
 };
 
 export const lookupPlaceholderByLanguage: Record<Language, string> = {

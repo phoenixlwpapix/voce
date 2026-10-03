@@ -39,8 +39,8 @@ function ReviewCardBack({ word }: { word: WordDocument }) {
       {word.grammar ? (
         <div className="my-7 flex flex-wrap gap-x-5 gap-y-2 border-y border-border py-4 text-xs text-muted-foreground">
           {word.grammar.gender ? <span>{genderLabel(word.language, word.grammar.gender)}</span> : null}
-          {word.grammar.infinitive ? <span>Infinitive · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
-          {word.grammar.baseForm && word.grammar.baseForm !== word.grammar.infinitive ? <span>Base form · <b className="font-serif font-normal text-foreground">{word.grammar.baseForm}</b></span> : null}
+          {word.grammar.infinitive ? <span>动词不定式 · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
+          {word.grammar.baseForm && word.grammar.baseForm !== word.grammar.infinitive ? <span>词典原形 · <b className="font-serif font-normal text-foreground">{word.grammar.baseForm}</b></span> : null}
           {word.grammar.noteZh ? <span lang="zh-CN" className="basis-full">{word.grammar.noteZh}</span> : null}
         </div>
       ) : <div className="my-7 border-t border-border" />}
@@ -153,7 +153,7 @@ export function ReviewSession() {
   }, [current, playCurrent, rateCurrent, router]);
 
   if (!language || queue === undefined) {
-    return <main className="grid min-h-dvh place-items-center"><div className="text-center"><LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" /><p className="mt-4 text-sm text-muted-foreground">Preparing today&apos;s cards…</p></div></main>;
+    return <main className="grid min-h-dvh place-items-center"><div className="text-center"><LoaderCircle className="mx-auto size-5 animate-spin text-muted-foreground motion-reduce:animate-none" /><p className="mt-4 text-sm text-muted-foreground">正在准备今日复习卡片…</p></div></main>;
   }
 
   if (!current) {
@@ -162,10 +162,10 @@ export function ReviewSession() {
       <main className="grid min-h-dvh place-items-center px-5 text-center">
         <div className="max-w-md">
           <span className="mx-auto grid size-12 place-items-center rounded-full border border-border"><Check className="size-5" aria-hidden="true" /></span>
-          <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]} review complete</p>
-          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">That&apos;s all for today.</h1>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `You reviewed ${reviewedCount} ${reviewedCount === 1 ? "word" : "words"}.` : `No ${languageNames[language]} words are due.`}</p>
-          <Button asChild className="mt-8"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Back to lexicon</Link></Button>
+          <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]}复习完成</p>
+          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">今天的所有复习已完成</h1>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `本次已复习 ${reviewedCount} 个词汇。` : `当前没有需要复习的${languageNames[language]}词汇。`}</p>
+          <Button asChild className="mt-8"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回生词本</Link></Button>
         </div>
       </main>
     );
@@ -182,13 +182,13 @@ export function ReviewSession() {
   return (
     <main className="flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-7">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
-        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />Exit</Link></Button>
+        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />退出</Link></Button>
         <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
           {isRelearning
-            ? `${language} · Relearning · ${relearning.length} left`
-            : `${language} · Due now · ${String(position).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
+            ? `${languageNames[language]} · 重新强化 · 剩余 ${relearning.length} 词`
+            : `${languageNames[language]} · 待复习 · ${String(position).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
         </p>
-        <Button type="button" variant="ghost" size="icon" onClick={playCurrent} disabled={!speechAvailable} aria-label={`Pronounce ${current.word}`} title={speechAvailable ? "Press Space to pronounce" : "Speech is unavailable in this browser"}><Volume2 className="size-4" /></Button>
+        <Button type="button" variant="ghost" size="icon" onClick={playCurrent} disabled={!speechAvailable} aria-label={`朗读 ${current.word}`} title={speechAvailable ? "按空格键播放发音" : "当前浏览器不支持语音朗读"}><Volume2 className="size-4" /></Button>
       </header>
 
       <div className="mx-auto mt-4 h-px w-full max-w-5xl bg-border"><div className="h-px bg-foreground transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></div>
@@ -198,7 +198,7 @@ export function ReviewSession() {
           type="button"
           onClick={() => setFlippedId(flipped ? null : current._id)}
           className="group flex min-h-[26rem] w-full items-center justify-center border-y border-border px-4 py-12 text-center outline-none transition-colors hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring sm:min-h-[30rem] sm:px-14 motion-reduce:transition-none"
-          aria-label={flipped ? "Show card front" : "Show card back"}
+          aria-label={flipped ? "显示卡片正面" : "显示卡片背面"}
           aria-pressed={flipped}
         >
           {flipped ? (
@@ -215,19 +215,19 @@ export function ReviewSession() {
               >
                 {current.word}
               </h1>
-              <p className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground"><CornerDownLeft className="size-3.5" aria-hidden="true" />Enter · Flip</p>
+              <p className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground"><CornerDownLeft className="size-3.5" aria-hidden="true" />Enter · 翻转卡片</p>
             </div>
           )}
         </button>
 
         <div className={cn("mt-7 grid w-full grid-cols-2 gap-3 transition-opacity motion-reduce:transition-none", !flipped && "pointer-events-none opacity-35")} aria-hidden={!flipped}>
-          <Button type="button" variant="outline" className="h-14" onClick={() => void rateCurrent("forgot")} disabled={!flipped || rating}><RotateCcw className="size-4" aria-hidden="true" />Forgot <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">1</kbd></Button>
-          <Button type="button" className="h-14" onClick={() => void rateCurrent("remembered")} disabled={!flipped || rating}><Check className="size-4" aria-hidden="true" />Remembered <kbd className="ml-auto font-mono text-[10px] opacity-65">2</kbd></Button>
+          <Button type="button" variant="outline" className="h-14" onClick={() => void rateCurrent("forgot")} disabled={!flipped || rating}><RotateCcw className="size-4" aria-hidden="true" />没记住 <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">1</kbd></Button>
+          <Button type="button" className="h-14" onClick={() => void rateCurrent("remembered")} disabled={!flipped || rating}><Check className="size-4" aria-hidden="true" />记住了 <kbd className="ml-auto font-mono text-[10px] opacity-65">2</kbd></Button>
         </div>
       </section>
 
       <footer className="mx-auto hidden w-full max-w-5xl justify-center gap-6 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:flex">
-        <span>Space · Pronounce</span><span>Enter · Flip</span><span>Esc · Exit</span>
+        <span>空格 · 朗读</span><span>Enter · 翻转</span><span>Esc · 退出</span>
       </footer>
     </main>
   );

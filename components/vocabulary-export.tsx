@@ -47,7 +47,7 @@ export function VocabularyExport({ language, menuItem = false }: { language: Lan
       }
 
       if (words.length === 0) {
-        toast.info(scope === "current" ? `No ${languageNames[language]} words to export.` : "No saved words to export.");
+        toast.info(scope === "current" ? `没有可导出的${languageNames[language]}词汇。` : "暂无已保存的生词可导出。");
         return;
       }
 
@@ -62,8 +62,8 @@ export function VocabularyExport({ language, menuItem = false }: { language: Lan
       URL.revokeObjectURL(url);
 
       setOpen(false);
-      toast.success(`Exported ${words.length} ${words.length === 1 ? "word" : "words"}.`, {
-        description: scope === "current" ? `${languageNames[language]} vocabulary · CSV` : "All languages · CSV",
+      toast.success(`成功导出 ${words.length} 个词汇。`, {
+        description: scope === "current" ? `${languageNames[language]}词汇 · CSV` : "所有语种词汇 · CSV",
       });
     } catch (error) {
       toast.error(getUserErrorMessage(error));
@@ -77,17 +77,17 @@ export function VocabularyExport({ language, menuItem = false }: { language: Lan
       <DialogTrigger asChild>
         <Button type="button" variant={menuItem ? "ghost" : "outline"} size={menuItem ? "default" : "sm"} className={menuItem ? "w-full justify-start px-3 text-sm" : undefined}>
           <Download className="size-4" aria-hidden="true" />
-          Export vocabulary
+          导出词汇
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogTitle>Export vocabulary</DialogTitle>
+        <DialogTitle>导出词汇</DialogTitle>
         <DialogDescription>
-          Download a UTF-8 CSV with definitions, grammar notes, examples, and dates.
+          下载包含释义、语法备注、例句和添加日期的 UTF-8 CSV 文件。
         </DialogDescription>
 
         <fieldset className="mt-7 space-y-2" disabled={exporting}>
-          <legend className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Export range</legend>
+          <legend className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">导出范围</legend>
           <label className="flex cursor-pointer items-start gap-3 border border-border p-4 transition-colors has-[:checked]:border-foreground has-[:checked]:bg-secondary/60">
             <input
               type="radio"
@@ -98,8 +98,8 @@ export function VocabularyExport({ language, menuItem = false }: { language: Lan
               className="mt-1 accent-foreground"
             />
             <span>
-              <span className="block text-sm font-medium">Current language</span>
-              <span className="mt-1 block text-xs leading-5 text-muted-foreground">All saved {languageNames[language]} words ({language})</span>
+              <span className="block text-sm font-medium">当前语种</span>
+              <span className="mt-1 block text-xs leading-5 text-muted-foreground">已保存的所有{languageNames[language]}词汇 ({language})</span>
             </span>
           </label>
           <label className="flex cursor-pointer items-start gap-3 border border-border p-4 transition-colors has-[:checked]:border-foreground has-[:checked]:bg-secondary/60">
@@ -112,19 +112,19 @@ export function VocabularyExport({ language, menuItem = false }: { language: Lan
               className="mt-1 accent-foreground"
             />
             <span>
-              <span className="block text-sm font-medium">All languages</span>
-              <span className="mt-1 block text-xs leading-5 text-muted-foreground">English, French, Spanish, and Japanese in one file</span>
+              <span className="block text-sm font-medium">所有语种</span>
+              <span className="mt-1 block text-xs leading-5 text-muted-foreground">英语、法语、西班牙语与日语整合至单一文件</span>
             </span>
           </label>
         </fieldset>
 
         <div className="mt-7 flex justify-end gap-3">
           <DialogClose asChild>
-            <Button type="button" variant="ghost" disabled={exporting}>Cancel</Button>
+            <Button type="button" variant="ghost" disabled={exporting}>取消</Button>
           </DialogClose>
           <Button type="button" onClick={() => void exportWords()} disabled={exporting}>
             {exporting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Download className="size-4" aria-hidden="true" />}
-            {exporting ? "Preparing…" : "Download CSV"}
+            {exporting ? "正在生成…" : "下载 CSV"}
           </Button>
         </div>
       </DialogContent>

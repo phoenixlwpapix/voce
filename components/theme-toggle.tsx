@@ -15,14 +15,14 @@ export function ThemeToggle({ showLabel = false }: { showLabel?: boolean }) {
       className={showLabel ? "w-full justify-start px-3 text-sm" : "relative"}
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       // resolvedTheme is unknown during server rendering, so visible theme text switches via CSS like the icons.
-      aria-label={showLabel ? undefined : "Toggle color theme"}
+      aria-label={showLabel ? undefined : "切换色彩主题"}
     >
       <Sun className={showLabel ? "size-4 dark:hidden" : "size-[18px] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90 motion-reduce:transition-none"} aria-hidden="true" />
       <Moon className={showLabel ? "hidden size-4 dark:block" : "absolute size-[18px] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0 motion-reduce:transition-none"} aria-hidden="true" />
       {showLabel ? (
         <>
-          <span className="dark:hidden">Dark appearance</span>
-          <span className="hidden dark:inline">Light appearance</span>
+          <span className="dark:hidden">深色模式</span>
+          <span className="hidden dark:inline">浅色模式</span>
         </>
       ) : null}
     </Button>

@@ -46,11 +46,11 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
     const password = String(formData.get("password") ?? "");
 
     if (!email || !email.includes("@")) {
-      setError("Enter a valid email address.");
+      setError("请输入有效的电子邮箱地址。");
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError("密码长度至少需要 8 个字符。");
       return;
     }
 
@@ -69,8 +69,8 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
         : null;
       setError(
         mode === "signIn"
-          ? "Incorrect email or password. Try again."
-          : serverMessage ?? "Couldn't create the account. If this email is already registered, switch to sign in.",
+          ? "邮箱或密码错误，请重试。"
+          : serverMessage ?? "无法创建账户。如果该邮箱已被注册，请切换至登录。",
       );
     } finally {
       setSubmitting(false);
@@ -97,25 +97,25 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
           <div>
             <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
             <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-              Personal lexicon
+              个人词典
             </p>
           </div>
         </div>
 
         <div className="max-w-xl pb-[6vh]">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            A place for words to stay
+            让生词在此沉淀
           </p>
           <h2 className="mt-7 max-w-[9ch] font-serif text-[clamp(3.5rem,5.5vw,6rem)] leading-[0.88] tracking-[-0.06em]">
-            Words worth returning to.
+            值得一再回顾的词汇
           </h2>
           <p className="mt-9 text-base leading-7 text-muted-foreground">
-            Collect it. Revisit it. Make it yours.
+            记录、重温、融会贯通。
           </p>
         </div>
 
         <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-          English · French · Spanish · Japanese
+          英语 · 法语 · 西班牙语 · 日语
         </p>
       </section>
 
@@ -126,25 +126,25 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
             <div>
               <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
               <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-                Personal lexicon
+                个人词典
               </p>
             </div>
           </div>
 
           <KeyRound className="size-5 text-muted-foreground" aria-hidden="true" />
           <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-            Private access
+            专属访问
           </p>
           <h1 className="mt-3 font-serif text-5xl tracking-[-0.05em] sm:text-6xl">
-            {mode === "signIn" ? "Welcome back." : "Create your account."}
+            {mode === "signIn" ? "欢迎回来" : "创建新账户"}
           </h1>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
             {mode === "signIn"
-              ? "Sign in to keep collecting and reviewing your words."
-              : invited ? "Create an account to accept your invitation and start your own lexicon." : "Voce is invite-only. Open your invitation link to create an account."}
+              ? "登录以继续记录和复习生词。"
+              : invited ? "创建账户以接受邀请，开启你的专属词典。" : "Voce 仅限邀请使用。请通过邀请链接打开并注册账户。"}
           </p>
 
-          <div className="mt-10 grid grid-cols-2 border-y border-border" role="tablist" aria-label="Account options">
+          <div className="mt-10 grid grid-cols-2 border-y border-border" role="tablist" aria-label="账户选项">
             <button
               type="button"
               role="tab"
@@ -152,7 +152,7 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
               onClick={() => changeMode("signIn")}
               className="h-11 border-r border-border text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring aria-selected:bg-secondary aria-selected:text-foreground motion-reduce:transition-none"
             >
-              Sign in
+              登录
             </button>
             <button
               type="button"
@@ -161,14 +161,14 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
               onClick={() => changeMode("signUp")}
               className="h-11 text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring aria-selected:bg-secondary aria-selected:text-foreground motion-reduce:transition-none"
             >
-              Create account
+              注册账户
             </button>
           </div>
 
           <form className="mt-8" onSubmit={handleSubmit} noValidate>
             <div>
               <label htmlFor="auth-email" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Email
+                电子邮箱
               </label>
               <Input
                 id="auth-email"
@@ -184,14 +184,14 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
             </div>
             <div className="mt-6">
               <label htmlFor="auth-password" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Password
+                密码
               </label>
               <Input
                 id="auth-password"
                 name="password"
                 type="password"
                 autoComplete={mode === "signIn" ? "current-password" : "new-password"}
-                placeholder="At least 8 characters"
+                placeholder="至少 8 位字符"
                 minLength={8}
                 required
                 disabled={submitting}
@@ -215,7 +215,7 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
               ) : (
                 <ArrowRight className="size-4" aria-hidden="true" />
               )}
-              {submitting ? "Checking…" : mode === "signIn" ? "Sign in to Voce" : "Create and enter Voce"}
+              {submitting ? "正在验证…" : mode === "signIn" ? "登录 Voce" : "创建并进入 Voce"}
             </Button>
           </form>
 
@@ -248,8 +248,8 @@ function AccountSetup() {
   return (
     <main className="grid min-h-dvh place-items-center px-5 text-center">
       <div>
-        <h1 className="font-serif text-3xl">Preparing your personal lexicon</h1>
-        {error ? <Button className="mt-6" onClick={() => void initialize()}>Retry setup</Button> : <p className="mt-4 text-sm text-muted-foreground">Assigning your account and existing words…</p>}
+        <h1 className="font-serif text-3xl">正在准备你的个人词典</h1>
+        {error ? <Button className="mt-6" onClick={() => void initialize()}>重试设置</Button> : <p className="mt-4 text-sm text-muted-foreground">正在初始化账户及词汇数据…</p>}
       </div>
     </main>
   );
@@ -263,12 +263,12 @@ function InvitationAcceptance({ token }: { token: string }) {
     if (started.current) return;
     started.current = true;
     void accept({ token }).then(() => window.location.replace("/"))
-      .catch(() => setError("This invitation is invalid, expired, or already used. Ask for a new link."));
+      .catch(() => setError("邀请无效、已过期或已被使用。请索取新的邀请链接。"));
   }, [accept, token]);
   return <main className="grid min-h-dvh place-items-center px-5 text-center">
     <div className="max-w-md border-y border-border py-14">
-      <h1 className="font-serif text-4xl">Joining Voce</h1>
-      <p className="mt-4 text-sm text-muted-foreground">{error ?? "Preparing your personal lexicon…"}</p>
+      <h1 className="font-serif text-4xl">加入 Voce</h1>
+      <p className="mt-4 text-sm text-muted-foreground">{error ?? "正在准备你的个人词典…"}</p>
     </div>
   </main>;
 }
@@ -295,21 +295,21 @@ function SessionGate({ children, subject, signOut, inviteToken }: {
   if (session === undefined) {
     return pathname === "/" || pathname === "/review" || pathname === "/quiz"
       ? <OwnerSessionContext value={cachedSession}>{children}</OwnerSessionContext>
-      : <LoadingScreen label="Checking your account…" />;
+      : <LoadingScreen label="正在验证账户…" />;
   }
   if (session.status === "setup") return <AccountSetup />;
   if (session.status === "invitationRequired" && inviteToken) return <InvitationAcceptance token={inviteToken} />;
   if (session.status === "invitationRequired") {
-    return <main className="grid min-h-dvh place-items-center px-5 text-center"><div className="max-w-md border-y border-border py-14"><LockKeyhole className="mx-auto size-5 text-muted-foreground" aria-hidden="true" /><h1 className="mt-6 font-serif text-4xl">Invitation required</h1><p className="mt-4 text-sm text-muted-foreground">Ask the person who invited you for a Voce link, then open it while signed in.</p><Button variant="outline" className="mt-8" onClick={() => void signOut()}>Sign out</Button></div></main>;
+    return <main className="grid min-h-dvh place-items-center px-5 text-center"><div className="max-w-md border-y border-border py-14"><LockKeyhole className="mx-auto size-5 text-muted-foreground" aria-hidden="true" /><h1 className="mt-6 font-serif text-4xl">需要邀请链接</h1><p className="mt-4 text-sm text-muted-foreground">请向邀请人索取 Voce 邀请链接，并在登录后打开。</p><Button variant="outline" className="mt-8" onClick={() => void signOut()}>退出登录</Button></div></main>;
   }
   if (session.status === "denied") {
     return (
       <main className="grid min-h-dvh place-items-center px-5 text-center">
         <div className="max-w-md border-y border-border py-14">
           <LockKeyhole className="mx-auto size-5 text-muted-foreground" aria-hidden="true" />
-          <h1 className="mt-6 font-serif text-4xl">Access restricted</h1>
-          <p className="mt-4 text-sm text-muted-foreground">This account can&apos;t access this personal lexicon.</p>
-          <Button variant="outline" className="mt-8" onClick={() => void signOut()}>Sign out</Button>
+          <h1 className="mt-6 font-serif text-4xl">访问受限</h1>
+          <p className="mt-4 text-sm text-muted-foreground">该账户无法访问此个人词典。</p>
+          <Button variant="outline" className="mt-8" onClick={() => void signOut()}>退出登录</Button>
         </div>
       </main>
     );
@@ -344,13 +344,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       setSigningOut(false);
     }
   }
-  if (signingOut) return <LoadingScreen label="Signing out…" />;
+  if (signingOut) return <LoadingScreen label="正在退出登录…" />;
   if (isLoading) {
     // The workspace renders its own loading states without a session, so the
     // home page paints its real layout (including in server HTML) instead of a spinner.
     return pathname === "/"
       ? <OwnerSessionContext value={null}>{children}</OwnerSessionContext>
-      : <LoadingScreen label="Checking your session…" />;
+      : <LoadingScreen label="正在检查登录状态…" />;
   }
   if (!isAuthenticated || !subject) return <SignInScreen key={inviteToken ?? "regular"} inviteToken={inviteToken} />;
   return (

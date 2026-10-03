@@ -61,7 +61,7 @@ export function PwaClient() {
       className="fixed inset-x-0 top-0 z-50 flex min-h-9 items-center justify-center gap-2 border-b border-border bg-background/95 px-4 py-2 text-center text-xs text-muted-foreground shadow-sm backdrop-blur"
     >
       <WifiOff className="size-3.5 shrink-0" aria-hidden="true" />
-      Offline — saved screens remain available; syncing and lookups will resume when you reconnect.
+      当前处于离线状态 — 已保存的内容仍可浏览；网络恢复后将自动恢复同步与查词。
     </div>
   );
 }

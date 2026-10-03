@@ -12,8 +12,8 @@ const ipa = Noto_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-noto-
 const japanese = Noto_Sans_JP({ variable: "--font-noto-sans-jp", weight: ["400", "500"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Voce — Personal Lexicon", template: "%s · Voce" },
-  description: "A quiet multilingual vocabulary notebook for English, French, Spanish and Japanese.",
+  title: { default: "Voce — 个人词典", template: "%s · Voce" },
+  description: "沉浸雅致的多语种生词本，支持英语、法语、西班牙语与日语。",
   applicationName: "Voce",
   appleWebApp: {
     capable: true,
@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${serif.variable} ${sans.variable} ${mono.variable} ${ipa.variable} ${japanese.variable} antialiased`}>
         <Providers>{children}</Providers>
         <PwaClient />

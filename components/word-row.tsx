@@ -34,7 +34,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
     try {
       await deleteWord({ id: word._id });
       setDialogOpen(false);
-      toast.success(`Deleted ${word.word}`);
+      toast.success(`已删除 ${word.word}`);
     } catch (error) {
       toast.error(getUserErrorMessage(error));
     } finally {
@@ -51,7 +51,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
           onClick={() => setExpanded((current) => !current)}
           aria-expanded={expanded}
           aria-controls={detailsId}
-          aria-label={`${expanded ? "Collapse" : "Expand"} details for ${word.word}`}
+          aria-label={`${expanded ? "收起" : "展开"} ${word.word} 的详细内容`}
         />
         <div className="pointer-events-none grid grid-cols-[1fr_2.5rem] gap-x-3 py-5 sm:grid-cols-[minmax(10rem,1.1fr)_5rem_minmax(8rem,0.9fr)_minmax(12rem,1.5fr)_2.5rem] sm:items-center sm:gap-x-5 sm:py-6">
           <div className="min-w-0">
@@ -79,8 +79,8 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
               size="icon"
               onClick={() => onSpeak(word.word, word.language)}
               disabled={!speechAvailable}
-              aria-label={`Pronounce ${word.word}`}
-              title={speechAvailable ? "Play pronunciation" : "Speech is unavailable in this browser"}
+              aria-label={`朗读 ${word.word}`}
+              title={speechAvailable ? "播放发音" : "当前浏览器不支持语音朗读"}
             >
               <Volume2 className="size-4" aria-hidden="true" />
             </Button>
@@ -92,7 +92,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
         <div className="overflow-hidden">
           <div className="grid gap-8 pb-8 pl-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] sm:pl-[calc(1.1fr)]">
             <div>
-              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Definitions</p>
+              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">词义释义</p>
               <ol className="space-y-3">
                 {word.definitions.map((definition, index) => (
                   <li key={`${definition.partOfSpeech}-${index}`} className="grid grid-cols-[1.25rem_1fr] gap-2 text-sm leading-6">
@@ -105,15 +105,15 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
               {word.grammar ? (
                 <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-l border-border pl-4 text-xs text-muted-foreground">
                   {word.grammar.gender ? <span>{genderLabel(word.language, word.grammar.gender)}</span> : null}
-                  {word.grammar.infinitive ? <span>Infinitive · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
-                  {word.grammar.baseForm && word.grammar.baseForm !== word.grammar.infinitive ? <span>Base form · <b className="font-serif font-normal text-foreground">{word.grammar.baseForm}</b></span> : null}
+                  {word.grammar.infinitive ? <span>动词不定式 · <b className="font-serif font-normal text-foreground">{word.grammar.infinitive}</b></span> : null}
+                  {word.grammar.baseForm && word.grammar.baseForm !== word.grammar.infinitive ? <span>词典原形 · <b className="font-serif font-normal text-foreground">{word.grammar.baseForm}</b></span> : null}
                   {word.grammar.noteZh ? <span lang="zh-CN" className="basis-full">{word.grammar.noteZh}</span> : null}
                 </div>
               ) : null}
             </div>
 
             <div>
-              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">In context</p>
+              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">语境例句</p>
               <div className="space-y-5">
                 {word.examples.map((example, index) => (
                   <blockquote key={`${example.target}-${index}`} className="border-l border-border pl-4">
@@ -125,19 +125,19 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4 text-[10px] text-muted-foreground sm:col-span-2">
-              <p className="font-mono tracking-[0.08em]">Added {formatRecordDate(word.createdAt)}{word.lastReviewedAt ? ` · Reviewed ${formatRecordDate(word.lastReviewedAt)}` : ""}</p>
+              <p className="font-mono tracking-[0.08em]">添加于 {formatRecordDate(word.createdAt)}{word.lastReviewedAt ? ` · 复习于 ${formatRecordDate(word.lastReviewedAt)}` : ""}</p>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button type="button" variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="size-3.5" aria-hidden="true" />Delete
+                    <Trash2 className="size-3.5" aria-hidden="true" />删除
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogTitle>Delete “{word.word}”?</DialogTitle>
-                  <DialogDescription>Definitions, examples, and review progress will be permanently deleted. This can&apos;t be undone.</DialogDescription>
+                  <DialogTitle>删除“{word.word}”？</DialogTitle>
+                  <DialogDescription>该词汇的释义、例句与复习进度将被彻底删除，此操作无法撤销。</DialogDescription>
                   <div className="mt-7 flex justify-end gap-3">
-                    <DialogClose asChild><Button type="button" variant="ghost" disabled={deleting}>Keep word</Button></DialogClose>
-                    <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? "Deleting…" : "Delete permanently"}</Button>
+                    <DialogClose asChild><Button type="button" variant="ghost" disabled={deleting}>保留词条</Button></DialogClose>
+                    <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? "正在删除…" : "彻底删除"}</Button>
                   </div>
                 </DialogContent>
               </Dialog>

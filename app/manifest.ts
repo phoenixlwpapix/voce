@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Voce — Personal Lexicon",
+    name: "Voce — 个人词典",
     short_name: "Voce",
     description:
-      "A quiet multilingual vocabulary notebook for English, French, Spanish and Japanese.",
+      "沉浸雅致的多语种生词本，支持英语、法语、西班牙语与日语。",
     start_url: "/",
     scope: "/",
     display: "standalone",

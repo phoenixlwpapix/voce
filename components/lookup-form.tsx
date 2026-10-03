@@ -27,8 +27,8 @@ import { languages, type Language } from "@/lib/types";
 
 const inputSchema = z.string().check(
   z.trim(),
-  z.minLength(1, "Enter a word to look up."),
-  z.maxLength(maxWordLength, `Enter no more than ${maxWordLength} characters.`),
+  z.minLength(1, "请输入要查询的词语。"),
+  z.maxLength(maxWordLength, `请输入不超过 ${maxWordLength} 个字符。`),
 );
 const chineseInputSchema = z.string().check(
   z.trim(),
@@ -59,7 +59,8 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
   const [mode, setMode] = useState<LookupMode>("foreign");
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [submittingTarget, setSubmittingTarget] = useState<string | null>(null);
+  const submitting = submittingTarget !== null;
   const submissionLock = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [spelling, setSpelling] = useState<Extract<LookupActionResult, { status: "needs_confirmation" }> | null>(null);
@@ -101,7 +102,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
     }
 
     submissionLock.current = true;
-    setSubmitting(true);
+    setSubmittingTarget("lookup");
     setError(null);
     try {
       const result = await findTranslationCandidates({
@@ -118,7 +119,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       setError(getUserErrorMessage(caughtError));
     } finally {
       submissionLock.current = false;
-      setSubmitting(false);
+      setSubmittingTarget(null);
     }
   }
 
@@ -127,21 +128,22 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
     selectedLanguage: Language,
     valueOnFailure = inputWord,
     saveInflected = false,
+    targetKey = "lookup",
   ) {
     if (submissionLock.current || !account || languageSwitching) return;
 
     const validation = inputSchema.safeParse(inputWord);
     if (!validation.success) {
-      setError(validation.error.issues[0]?.message ?? "Invalid input.");
+      setError(validation.error.issues[0]?.message ?? "输入无效。");
       return;
     }
     if (!navigator.onLine) {
-      setError("You're offline. Reconnect and try again.");
+      setError("当前处于离线状态，请检查网络连接后重试。");
       return;
     }
 
     submissionLock.current = true;
-    setSubmitting(true);
+    setSubmittingTarget(targetKey);
     setError(null);
     try {
       const result = await lookupAndSave({
@@ -162,22 +164,22 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       if (result.status === "invalid") {
         setSpelling(null);
         setValue(valueOnFailure);
-        setError(`We couldn't find this word in ${languageNames[selectedLanguage]}. Check the spelling and try again.`);
+        setError(`未在${languageNames[selectedLanguage]}中找到该词，请检查拼写后重试。`);
         return;
       }
       setSpelling(null);
       setFormChoice(null);
       setValue("");
-      toast.success(result.status === "created" ? `Added ${result.word}` : `${result.word} is already saved`, {
+      toast.success(result.status === "created" ? `已添加 ${result.word}` : `${result.word} 已在生词本中`, {
         description: result.status === "created"
-          ? "Added to this month's collection."
-          : "The existing entry was left unchanged.",
+          ? "已收录至本月词汇。"
+          : "已有词条保持不变。",
       });
     } catch (caughtError) {
       setError(getUserErrorMessage(caughtError));
     } finally {
       submissionLock.current = false;
-      setSubmitting(false);
+      setSubmittingTarget(null);
     }
   }
 
@@ -185,15 +187,15 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
     <section className="mx-auto w-full max-w-5xl px-5 pb-5 pt-4 sm:px-8 sm:pb-9 sm:pt-9 lg:pb-10 lg:pt-10" aria-labelledby="lookup-title">
       <div className="grid gap-5 border-b border-border/70 pb-5 sm:gap-7 sm:pb-9 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(26rem,1.2fr)] lg:items-end lg:gap-16">
         <div>
-          <p className="mb-3 hidden font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground sm:block">Words worth keeping</p>
+          <p className="mb-3 hidden font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground sm:block">值得珍藏的词汇</p>
           <h1 id="lookup-title" className="max-w-xl font-serif text-[clamp(1.9rem,8vw,2.75rem)] font-normal leading-[0.98] tracking-[-0.055em] sm:text-[clamp(2.35rem,6vw,4.25rem)] sm:leading-[0.94]">
-            What will you<br />remember today?
+            今天想记住什么？
           </h1>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="self-end">
           <fieldset className="mb-2 flex gap-1 sm:mb-3" disabled={submitting || languageSwitching || !account}>
-            <legend className="sr-only">Choose vocabulary language</legend>
+            <legend className="sr-only">选择词汇语种</legend>
             {languages.map((item) => (
               <button
                 key={item}
@@ -214,7 +216,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
 
           <div className="relative flex items-center gap-2 border-y border-border/70 py-1.5 transition-colors focus-within:border-foreground motion-reduce:transition-none sm:gap-4">
             <label htmlFor="word-input" className="sr-only">
-              {mode === "chinese" ? `Enter Chinese to find ${languageNames[language]} vocabulary` : `Enter a word in ${languageNames[language]}`}
+              {mode === "chinese" ? `输入中文反查${languageNames[language]}表达` : `输入${languageNames[language]}词语`}
             </label>
             <Input
               ref={inputRef}
@@ -242,13 +244,13 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
               onClick={() => changeMode(mode === "foreign" ? "chinese" : "foreign")}
               disabled={submitting || languageSwitching}
               className="flex min-h-10 shrink-0 items-center gap-1 border-l border-border/70 px-2 font-mono text-[10px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
-              aria-label={`Switch lookup direction to ${mode === "foreign" ? `Chinese to ${languageNames[language]}` : `${languageNames[language]} to Chinese`}`}
-              title="Switch lookup direction"
+              aria-label={`切换查词方向为 ${mode === "foreign" ? `中文 → ${languageNames[language]}` : `${languageNames[language]} → 中文`}`}
+              title="切换查词方向"
             >
               <span>{!languageKnown ? "→ 中文" : mode === "foreign" ? `${language} → 中文` : `中文 → ${language}`}</span>
               <ArrowLeftRight className="size-3.5" aria-hidden="true" />
             </button>
-            <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting || languageSwitching || !account} aria-label={submitting ? "Looking up" : mode === "chinese" ? "Find vocabulary" : "Look up and save"}>
+            <Button type="submit" size="icon" className="size-10 min-h-10 shrink-0" disabled={submitting || languageSwitching || !account} aria-label={submitting ? "查询中" : mode === "chinese" ? "反查词汇" : "查询并保存"}>
               {submitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : mode === "chinese" ? <Languages className="size-4" aria-hidden="true" /> : <ArrowUpRight className="size-4" aria-hidden="true" />}
             </Button>
           </div>
@@ -260,39 +262,54 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       </div>
       <Dialog open={spelling !== null} onOpenChange={(open) => { if (!open && !submitting) setSpelling(null); }}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
-          <DialogTitle>Check the spelling</DialogTitle>
+          <DialogTitle>检查拼写</DialogTitle>
           <DialogDescription>
-            Nothing has been saved for “{spelling?.inputWord}”. Did you mean one of these words?
+            尚未为“{spelling?.inputWord}”保存任何内容。你想查的是不是以下词语？
           </DialogDescription>
           <div className="mt-6 space-y-3">
-            {spelling?.suggestions.map((candidate, index) => (
-              <div key={index} className="border border-border p-4">
-                <p
-                  className={cn(
-                    "font-serif text-2xl",
-                    candidate.language === "JA" && "font-ja",
-                  )}
-                  lang={localeByLanguage[candidate.language]}
-                >
-                  {candidate.word}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{languageNames[candidate.language]}</p>
-                <p className="mt-2 text-sm" lang="zh-CN">{candidate.meaningZh}</p>
-                <Button className="mt-3 w-full" disabled={submitting} onClick={() => void submitWord(candidate.word, candidate.language)}>
-                  {submitting ? "Checking and saving…" : `Save ${candidate.word}`}
-                </Button>
-              </div>
-            ))}
+            {spelling?.suggestions.map((candidate, index) => {
+              const targetKey = `spelling:${candidate.word}-${index}`;
+              const isTargetSubmitting = submittingTarget === targetKey;
+              return (
+                <div key={index} className="border border-border p-4">
+                  <p
+                    className={cn(
+                      "font-serif text-2xl",
+                      candidate.language === "JA" && "font-ja",
+                    )}
+                    lang={localeByLanguage[candidate.language]}
+                  >
+                    {candidate.word}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{languageNames[candidate.language]}</p>
+                  <p className="mt-2 text-sm" lang="zh-CN">{candidate.meaningZh}</p>
+                  <Button
+                    className="mt-3 w-full"
+                    disabled={submitting}
+                    onClick={() => void submitWord(candidate.word, candidate.language, undefined, false, targetKey)}
+                  >
+                    {isTargetSubmitting ? (
+                      <>
+                        <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                        <span>正在保存…</span>
+                      </>
+                    ) : (
+                      `保存 ${candidate.word}`
+                    )}
+                  </Button>
+                </div>
+              );
+            })}
           </div>
           {error ? <p role="alert" className="mt-4 text-sm text-destructive">{error}</p> : null}
-          <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setSpelling(null)}>Back to editing</Button>
+          <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setSpelling(null)}>返回修改</Button>
         </DialogContent>
       </Dialog>
       <Dialog open={formChoice !== null} onOpenChange={(open) => { if (!open && !submitting) setFormChoice(null); }}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
-          <DialogTitle>Found a dictionary form</DialogTitle>
+          <DialogTitle>发现词典原形</DialogTitle>
           <DialogDescription>
-            Nothing has been saved for “{formChoice?.inputWord}”. Did you mean to save its dictionary form?
+            尚未为“{formChoice?.inputWord}”保存任何内容。是否保存该词的词典原形？
           </DialogDescription>
           <div className="mt-6 space-y-3">
             <div className="border border-border bg-secondary/35 p-4">
@@ -307,7 +324,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
                   {formChoice?.baseForm}
                 </p>
                 <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground border border-border bg-background px-2 py-0.5">
-                  Dictionary form
+                  词典原形
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -320,10 +337,17 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
                 className="mt-3 w-full"
                 disabled={submitting}
                 onClick={() => {
-                  if (formChoice) void submitWord(formChoice.baseForm, formChoice.language);
+                  if (formChoice) void submitWord(formChoice.baseForm, formChoice.language, undefined, false, "form:base");
                 }}
               >
-                {submitting ? "Checking and saving…" : `Save ${formChoice?.baseForm}`}
+                {submittingTarget === "form:base" ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    <span>正在保存…</span>
+                  </>
+                ) : (
+                  `保存原形 · ${formChoice?.baseForm}`
+                )}
               </Button>
             </div>
 
@@ -339,67 +363,85 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
                   {formChoice?.inputWord}
                 </p>
                 <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  As entered
+                  输入原样
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Keep the exact form you typed
+                保留你输入的当前变体形式
               </p>
               <Button
                 variant="outline"
                 className="mt-3 w-full"
                 disabled={submitting}
                 onClick={() => {
-                  if (formChoice) void submitWord(formChoice.inputWord, formChoice.language, formChoice.inputWord, true);
+                  if (formChoice) void submitWord(formChoice.inputWord, formChoice.language, formChoice.inputWord, true, "form:input");
                 }}
               >
-                {submitting ? "Checking and saving…" : `Save ${formChoice?.inputWord}`}
+                {submittingTarget === "form:input" ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    <span>正在保存…</span>
+                  </>
+                ) : (
+                  `保存当前形式 · ${formChoice?.inputWord}`
+                )}
               </Button>
             </div>
           </div>
           {error ? <p role="alert" className="mt-4 text-sm text-destructive">{error}</p> : null}
-          <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setFormChoice(null)}>Back to editing</Button>
+          <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setFormChoice(null)}>返回修改</Button>
         </DialogContent>
       </Dialog>
       <Dialog open={translation !== null} onOpenChange={(open) => { if (!open && !submitting) setTranslation(null); }}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
-          <DialogTitle>Choose a {translation ? languageNames[language] : "target"} expression</DialogTitle>
+          <DialogTitle>选择{translation ? languageNames[language] : "目标"}表达</DialogTitle>
           <DialogDescription>
-            Common expressions for “{translation?.queryZh}”. Nothing is saved until you choose one.
+            “{translation?.queryZh}”的常用表达。在你选择前不会保存任何内容。
           </DialogDescription>
           <div className="mt-6 space-y-3">
-            {translation?.candidates.map((candidate, index) => (
-              <div key={`${candidate.word}-${index}`} className="border border-border p-4">
-                <div className="flex items-baseline justify-between gap-4">
-                  <p
-                    className={cn(
-                      "font-serif text-2xl",
-                      language === "JA" && "font-ja",
-                    )}
-                    lang={localeByLanguage[language]}
+            {translation?.candidates.map((candidate, index) => {
+              const targetKey = `translation:${candidate.word}-${index}`;
+              const isTargetSubmitting = submittingTarget === targetKey;
+              return (
+                <div key={`${candidate.word}-${index}`} className="border border-border p-4">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <p
+                      className={cn(
+                        "font-serif text-2xl",
+                        language === "JA" && "font-ja",
+                      )}
+                      lang={localeByLanguage[language]}
+                    >
+                      {candidate.word}
+                    </p>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{candidate.partOfSpeech}</span>
+                  </div>
+                  <p className="mt-3 text-sm" lang="zh-CN">{candidate.meaningZh}</p>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground" lang="zh-CN">{candidate.usageZh}</p>
+                  <Button
+                    className="mt-4 w-full"
+                    disabled={submitting}
+                    onClick={() => {
+                      const originalQuery = translation?.queryZh ?? value;
+                      setTranslation(null);
+                      void submitWord(candidate.word, language, originalQuery, false, targetKey);
+                    }}
                   >
-                    {candidate.word}
-                  </p>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{candidate.partOfSpeech}</span>
+                    {isTargetSubmitting ? (
+                      <>
+                        <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                        <span>正在保存…</span>
+                      </>
+                    ) : (
+                      `保存 ${candidate.word}`
+                    )}
+                  </Button>
                 </div>
-                <p className="mt-3 text-sm" lang="zh-CN">{candidate.meaningZh}</p>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground" lang="zh-CN">{candidate.usageZh}</p>
-                <Button
-                  className="mt-4 w-full"
-                  disabled={submitting}
-                  onClick={() => {
-                    const originalQuery = translation?.queryZh ?? value;
-                    setTranslation(null);
-                    void submitWord(candidate.word, language, originalQuery);
-                  }}
-                >
-                  {submitting ? "Checking and saving…" : `Save ${candidate.word}`}
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {error ? <p role="alert" className="mt-4 text-sm text-destructive">{error}</p> : null}
-          <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setTranslation(null)}>Back to editing</Button>
+          <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setTranslation(null)}>返回修改</Button>
         </DialogContent>
       </Dialog>
     </section>

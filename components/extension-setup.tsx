@@ -51,9 +51,9 @@ export function ExtensionSetup() {
     try {
       await navigator.clipboard.writeText(pairing.code);
       setCopied(true);
-      toast.success("Pairing code copied");
+      toast.success("配对码已复制");
     } catch {
-      toast.error("Couldn't copy the code. Select it manually.");
+      toast.error("无法复制配对码，请手动选择复制。");
     }
   }
 
@@ -65,7 +65,7 @@ export function ExtensionSetup() {
         deviceId: disconnectTarget.id === "legacy" ? "legacy" : disconnectTarget.id,
       });
       setDisconnectTarget(null);
-      toast.success(`${disconnectTarget.name} disconnected`);
+      toast.success(`已断开与 ${disconnectTarget.name} 的连接`);
     } catch (error) {
       toast.error(getUserErrorMessage(error));
     } finally {
@@ -79,20 +79,20 @@ export function ExtensionSetup() {
         <div>
           <div className="flex items-center gap-3 text-muted-foreground">
             <Puzzle className="size-5" aria-hidden="true" />
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em]">Browser companion</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em]">浏览器配套插件</p>
           </div>
           <h1 id="extension-title" className="mt-7 max-w-[11ch] font-serif text-[clamp(3.25rem,8vw,6.5rem)] leading-[0.92] tracking-[-0.055em]">
-            Keep a word without leaving the page.
+            无需离开网页，随时收录生词。
           </h1>
           <p className="mt-8 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-            Select a word anywhere in Chrome, right-click, and send it straight to this lexicon. The extension uses the same Gemini lookup, duplicate handling, and review schedule as Voce.
+            在 Chrome 中划词右键，即可直接加入你的专属生词本。插件与 Voce 同步复用 Gemini 查词、去重逻辑与记忆周期。
           </p>
 
           <ol className="mt-12 border-t border-border">
             {[
-              ["01", "Open chrome://extensions and enable Developer mode."],
-              ["02", "Choose Load unpacked and select this repository's extension folder."],
-              ["03", "Open the Voce extension, paste a pairing code, and connect."],
+              ["01", "在 Chrome 中打开 chrome://extensions 并开启右上角的“开发者模式”。"],
+              ["02", "点击“加载已解压的扩展程序”，选择本仓库中的 extension 目录。"],
+              ["03", "打开 Voce 浏览器插件，粘贴配对码即可完成绑定。"],
             ].map(([number, instruction]) => (
               <li key={number} className="grid grid-cols-[2.5rem_1fr] gap-4 border-b border-border py-5 text-sm leading-6">
                 <span className="font-mono text-[10px] text-muted-foreground">{number}</span>
@@ -102,16 +102,16 @@ export function ExtensionSetup() {
           </ol>
         </div>
 
-        <aside className="self-start border-y border-border py-8 lg:mt-16" aria-label="Extension connection">
+        <aside className="self-start border-y border-border py-8 lg:mt-16" aria-label="插件连接">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Connection</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">连接状态</p>
               <p className="mt-2 text-sm font-medium">
                 {devices === undefined
-                  ? "Checking…"
+                  ? "正在检查…"
                   : devices.length === 0
-                    ? "No devices connected"
-                    : `${devices.length} ${devices.length === 1 ? "device" : "devices"} connected`}
+                    ? "暂无已连接设备"
+                    : `已连接 ${devices.length} 台设备`}
               </p>
             </div>
             <span className="grid size-10 place-items-center rounded-full border border-border" aria-hidden="true">
@@ -127,7 +127,7 @@ export function ExtensionSetup() {
 
           <div className="mt-8 border-t border-border pt-8">
             <p className="text-xs leading-5 text-muted-foreground">
-              Generate a one-time code after installing the extension. It expires in 10 minutes and can only be redeemed once.
+              安装插件后生成一次性配对码。配对码有效期为 10 分钟，且仅可兑换一次。
             </p>
             {pairing ? (
               <div className="mt-6">
@@ -135,26 +135,26 @@ export function ExtensionSetup() {
                   type="button"
                   onClick={() => void handleCopy()}
                   className="flex min-h-16 w-full items-center justify-between gap-3 border border-border px-4 text-left outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-                  aria-label="Copy pairing code"
+                  aria-label="复制配对码"
                 >
                   <code className="font-mono text-sm tracking-[0.12em]">{pairing.code}</code>
                   {copied ? <Check className="size-4 text-ja" aria-hidden="true" /> : <Copy className="size-4 text-muted-foreground" aria-hidden="true" />}
                 </button>
                 <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Expires {new Date(pairing.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  有效期至 {new Date(pairing.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
             ) : null}
 
             <Button type="button" className="mt-6 w-full" onClick={() => void handleGenerate()} disabled={generating}>
               {generating ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Puzzle className="size-4" aria-hidden="true" />}
-              {generating ? "Generating…" : pairing ? "Generate a new code" : "Generate pairing code"}
+              {generating ? "正在生成…" : pairing ? "生成新配对码" : "生成配对码"}
             </Button>
           </div>
 
           {devices && devices.length > 0 ? (
             <div className="mt-8 border-t border-border pt-6">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Connected devices</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">已连接设备</p>
               <ul className="mt-3 divide-y divide-border">
                 {devices.map((device) => (
                   <li key={device.id} className="flex items-center gap-3 py-4">
@@ -164,7 +164,7 @@ export function ExtensionSetup() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{device.name}</p>
                       <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
-                        Connected {new Date(device.connectedAt).toLocaleDateString()}
+                        连接于 {new Date(device.connectedAt).toLocaleDateString()}
                       </p>
                     </div>
                     <Button
@@ -173,7 +173,7 @@ export function ExtensionSetup() {
                       size="icon"
                       className="shrink-0 text-muted-foreground hover:text-destructive"
                       onClick={() => setDisconnectTarget(device)}
-                      aria-label={`Disconnect ${device.name}`}
+                      aria-label={`断开与 ${device.name} 的连接`}
                     >
                       <Unplug className="size-4" aria-hidden="true" />
                     </Button>
@@ -185,14 +185,14 @@ export function ExtensionSetup() {
 
           <Dialog open={disconnectTarget !== null} onOpenChange={(open) => { if (!open) setDisconnectTarget(null); }}>
             <DialogContent>
-              <DialogTitle>Disconnect {disconnectTarget?.name}?</DialogTitle>
+              <DialogTitle>断开与 {disconnectTarget?.name} 的连接？</DialogTitle>
               <DialogDescription>
-                Only this device will lose access. Your other connected computers will keep working.
+                仅此设备将失去访问权限，你的其他已连接设备不受影响。
               </DialogDescription>
               <div className="mt-7 flex justify-end gap-3">
-                <DialogClose asChild><Button type="button" variant="ghost" disabled={revoking}>Keep connected</Button></DialogClose>
+                <DialogClose asChild><Button type="button" variant="ghost" disabled={revoking}>保持连接</Button></DialogClose>
                 <Button type="button" variant="danger" onClick={() => void handleRevoke()} disabled={revoking}>
-                  {revoking ? "Disconnecting…" : "Disconnect device"}
+                  {revoking ? "正在断开…" : "断开连接"}
                 </Button>
               </div>
             </DialogContent>

@@ -79,21 +79,21 @@ export function Timeline({ language }: { language: Language }) {
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             {languageKnown && words !== undefined
-              ? <>Archive · {language} · {searchQuery.trim() || filterMonth ? `${visibleWordCount} of ` : ""}{languageWords.length} words</>
-              : "Archive"}
+              ? <>词库 · {languageNames[language]} · {searchQuery.trim() || filterMonth ? `${visibleWordCount} / ` : ""}{languageWords.length} 词</>
+              : "词库"}
           </p>
-          <h2 id="timeline-title" className="mt-1 font-serif text-[1.75rem] tracking-[-0.03em] sm:mt-2 sm:text-3xl">Vocabulary timeline</h2>
+          <h2 id="timeline-title" className="mt-1 font-serif text-[1.75rem] tracking-[-0.03em] sm:mt-2 sm:text-3xl">生词时间线</h2>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto">
           <div className="relative min-w-0 flex-1 sm:w-56 sm:flex-none">
             <Search className="pointer-events-none absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <label htmlFor="saved-word-search" className="sr-only">Search saved {languageNames[language]} words</label>
+            <label htmlFor="saved-word-search" className="sr-only">搜索已保存的{languageNames[language]}词汇</label>
             <Input
               id="saved-word-search"
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={languageKnown ? `Search saved ${language} words` : "Search saved words"}
+              placeholder={languageKnown ? `搜索已保存的${languageNames[language]}词汇` : "搜索已保存词汇"}
               maxLength={80}
               autoComplete="off"
               className="h-10 pl-7 pr-8 font-mono text-xs [&::-webkit-search-cancel-button]:appearance-none"
@@ -105,32 +105,32 @@ export function Timeline({ language }: { language: Language }) {
                 size="icon"
                 className="absolute right-0 top-1/2 size-8 min-h-8 -translate-y-1/2 text-muted-foreground"
                 onClick={() => setSearchQuery("")}
-                aria-label="Clear saved word search"
+                aria-label="清空搜索"
               >
                 <X className="size-3.5" aria-hidden="true" />
               </Button>
             ) : null}
           </div>
-          <Button type="button" variant={filterMonth ? "outline" : "ghost"} size="icon" className="size-11 shrink-0" onClick={() => setMonthPickerOpen((open) => !open)} aria-label={filterMonth ? `Filter month: ${formatMonthGroup(filterMonth)}` : "Filter by month"} aria-expanded={monthPickerOpen}>
+          <Button type="button" variant={filterMonth ? "outline" : "ghost"} size="icon" className="size-11 shrink-0" onClick={() => setMonthPickerOpen((open) => !open)} aria-label={filterMonth ? `按月份筛选：${formatMonthGroup(filterMonth)}` : "按月份筛选"} aria-expanded={monthPickerOpen}>
             <CalendarDays className="size-4" aria-hidden="true" />
           </Button>
         </div>
       </div>
       {monthPickerOpen ? (
         <div id="month-filter-panel" className="mb-5 flex items-center gap-3 border-b border-border pb-4 sm:justify-end">
-          <label htmlFor="month-filter" className="font-mono text-xs text-muted-foreground">Month</label>
-          <input id="month-filter" type="month" lang="en-US" value={filterMonth} onChange={(event) => setFilterMonth(event.target.value)} className="h-10 min-w-0 flex-1 border border-border bg-background px-2 font-mono text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-48" />
-          {filterMonth ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>Clear</Button> : null}
+          <label htmlFor="month-filter" className="font-mono text-xs text-muted-foreground">月份</label>
+          <input id="month-filter" type="month" lang="zh-CN" value={filterMonth} onChange={(event) => setFilterMonth(event.target.value)} className="h-10 min-w-0 flex-1 border border-border bg-background px-2 font-mono text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-48" />
+          {filterMonth ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>清除</Button> : null}
         </div>
       ) : filterMonth ? (
         <div className="mb-5 flex items-center gap-2 font-mono text-xs text-muted-foreground">
-          <span>Showing {formatMonthGroup(filterMonth)}</span>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>Clear filter</Button>
+          <span>正在显示 {formatMonthGroup(filterMonth)}</span>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setFilterMonth("")}>清除筛选</Button>
         </div>
       ) : null}
 
       {words === undefined ? (
-        <div className="min-h-72 space-y-6 py-6" role="status" aria-label="Loading vocabulary" aria-busy="true">
+        <div className="min-h-72 space-y-6 py-6" role="status" aria-label="正在加载词库" aria-busy="true">
           {[0, 1, 2, 3].map((row) => (
             <div key={row} className="animate-pulse border-b border-border pb-6 motion-reduce:animate-none" aria-hidden="true">
               <div className="h-6 w-36 rounded bg-secondary" />
@@ -142,8 +142,8 @@ export function Timeline({ language }: { language: Language }) {
         <div className="grid min-h-72 place-items-center border-b border-border text-center">
           <div className="max-w-sm py-14">
             <BookDashed className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
-            <h3 className="mt-5 font-serif text-2xl">The first {language} page is still blank</h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Use the field above to add your first word in this language.</p>
+            <h3 className="mt-5 font-serif text-2xl">{languageNames[language]}生词本还是空白的</h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">在上方输入框中添加你的第一个{languageNames[language]}词汇吧。</p>
           </div>
         </div>
       ) : sections.length === 0 ? (
@@ -151,13 +151,13 @@ export function Timeline({ language }: { language: Language }) {
           <div>
             {deferredSearchQuery.trim() ? (
               <>
-                <p className="font-serif text-xl">No saved {language} words match “{deferredSearchQuery.trim()}”</p>
-                <Button type="button" variant="ghost" className="mt-3" onClick={() => setSearchQuery("")}>Clear search</Button>
+                <p className="font-serif text-xl">未找到与“{deferredSearchQuery.trim()}”匹配的{languageNames[language]}词汇</p>
+                <Button type="button" variant="ghost" className="mt-3" onClick={() => setSearchQuery("")}>清空搜索</Button>
               </>
             ) : (
               <>
-                <p className="font-serif text-xl">No {language} words in {formatMonthGroup(filterMonth)}</p>
-                <Button type="button" variant="ghost" className="mt-3" onClick={() => setFilterMonth("")}>View all months</Button>
+                <p className="font-serif text-xl">{formatMonthGroup(filterMonth)} 没有{languageNames[language]}词汇</p>
+                <Button type="button" variant="ghost" className="mt-3" onClick={() => setFilterMonth("")}>查看全部月份</Button>
               </>
             )}
           </div>
