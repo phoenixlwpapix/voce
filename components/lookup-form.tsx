@@ -267,7 +267,15 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
           <div className="mt-6 space-y-3">
             {spelling?.suggestions.map((candidate, index) => (
               <div key={index} className="border border-border p-4">
-                <p className="font-serif text-2xl" lang={localeByLanguage[candidate.language]}>{candidate.word}</p>
+                <p
+                  className={cn(
+                    "font-serif text-2xl",
+                    candidate.language === "JA" && "font-ja",
+                  )}
+                  lang={localeByLanguage[candidate.language]}
+                >
+                  {candidate.word}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">{languageNames[candidate.language]}</p>
                 <p className="mt-2 text-sm" lang="zh-CN">{candidate.meaningZh}</p>
                 <Button className="mt-3 w-full" disabled={submitting} onClick={() => void submitWord(candidate.word, candidate.language)}>
@@ -284,16 +292,70 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
           <DialogTitle>Found a dictionary form</DialogTitle>
           <DialogDescription>
-            “{formChoice?.inputWord}” is a valid form of “{formChoice?.baseForm}”. Nothing has been saved yet.
+            Nothing has been saved for “{formChoice?.inputWord}”. Did you mean to save its dictionary form?
           </DialogDescription>
-          <p className="mt-5 text-sm" lang="zh-CN">{formChoice?.meaningZh}</p>
-          <div className="mt-5 space-y-3">
-            <Button className="w-full" disabled={submitting} onClick={() => { if (formChoice) void submitWord(formChoice.baseForm, formChoice.language); }}>
-              {submitting ? "Checking…" : `Save dictionary form · ${formChoice?.baseForm}`}
-            </Button>
-            <Button variant="outline" className="w-full" disabled={submitting} onClick={() => { if (formChoice) void submitWord(formChoice.inputWord, formChoice.language, formChoice.inputWord, true); }}>
-              {submitting ? "Checking…" : `Save this form · ${formChoice?.inputWord}`}
-            </Button>
+          <div className="mt-6 space-y-3">
+            <div className="border border-border bg-secondary/35 p-4">
+              <div className="flex items-baseline justify-between gap-4">
+                <p
+                  className={cn(
+                    "font-serif text-2xl",
+                    formChoice?.language === "JA" && "font-ja",
+                  )}
+                  lang={formChoice ? localeByLanguage[formChoice.language] : undefined}
+                >
+                  {formChoice?.baseForm}
+                </p>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground border border-border bg-background px-2 py-0.5">
+                  Dictionary form
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {formChoice ? languageNames[formChoice.language] : ""}
+              </p>
+              <p className="mt-2 text-sm" lang="zh-CN">
+                {formChoice?.meaningZh}
+              </p>
+              <Button
+                className="mt-3 w-full"
+                disabled={submitting}
+                onClick={() => {
+                  if (formChoice) void submitWord(formChoice.baseForm, formChoice.language);
+                }}
+              >
+                {submitting ? "Checking and saving…" : `Save ${formChoice?.baseForm}`}
+              </Button>
+            </div>
+
+            <div className="border border-border/70 p-4">
+              <div className="flex items-baseline justify-between gap-4">
+                <p
+                  className={cn(
+                    "font-serif text-xl text-muted-foreground",
+                    formChoice?.language === "JA" && "font-ja",
+                  )}
+                  lang={formChoice ? localeByLanguage[formChoice.language] : undefined}
+                >
+                  {formChoice?.inputWord}
+                </p>
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  As entered
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Keep the exact form you typed
+              </p>
+              <Button
+                variant="outline"
+                className="mt-3 w-full"
+                disabled={submitting}
+                onClick={() => {
+                  if (formChoice) void submitWord(formChoice.inputWord, formChoice.language, formChoice.inputWord, true);
+                }}
+              >
+                {submitting ? "Checking and saving…" : `Save ${formChoice?.inputWord}`}
+              </Button>
+            </div>
           </div>
           {error ? <p role="alert" className="mt-4 text-sm text-destructive">{error}</p> : null}
           <Button variant="ghost" className="mt-4" disabled={submitting} onClick={() => setFormChoice(null)}>Back to editing</Button>
@@ -309,7 +371,15 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
             {translation?.candidates.map((candidate, index) => (
               <div key={`${candidate.word}-${index}`} className="border border-border p-4">
                 <div className="flex items-baseline justify-between gap-4">
-                  <p className="font-serif text-2xl" lang={localeByLanguage[language]}>{candidate.word}</p>
+                  <p
+                    className={cn(
+                      "font-serif text-2xl",
+                      language === "JA" && "font-ja",
+                    )}
+                    lang={localeByLanguage[language]}
+                  >
+                    {candidate.word}
+                  </p>
                   <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{candidate.partOfSpeech}</span>
                 </div>
                 <p className="mt-3 text-sm" lang="zh-CN">{candidate.meaningZh}</p>

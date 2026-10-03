@@ -151,20 +151,36 @@ function submitLookup(word, requestedLanguage, saveInflected = false) {
         return;
       }
       if (result.status === "form_choice") {
-        setMessage(lookupMessage, `“${result.inputWord}” is a valid form of “${result.baseForm}”. Nothing saved yet.`);
-        const meaning = document.createElement("p");
-        meaning.textContent = result.meaningZh;
-        lookupMessage.append(meaning);
-        for (const [label, selectedWord, keepForm] of [
-          [`Save dictionary form · ${result.baseForm}`, result.baseForm, false],
-          [`Save this form · ${result.inputWord}`, result.inputWord, true],
-        ]) {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.textContent = label;
-          button.addEventListener("click", () => submitLookup(selectedWord, result.language, keepForm));
-          lookupMessage.append(button);
-        }
+        setMessage(lookupMessage, `Nothing saved for “${result.inputWord}”. Did you mean to save its dictionary form?`);
+        const baseRow = document.createElement("div");
+        const baseWord = document.createElement("strong");
+        baseWord.textContent = result.baseForm;
+        const baseMeaning = document.createElement("span");
+        baseMeaning.textContent = ` (Dictionary form) — ${result.meaningZh}`;
+        baseRow.append(baseWord, baseMeaning);
+        const baseButton = document.createElement("button");
+        baseButton.type = "button";
+        baseButton.textContent = `Save ${result.baseForm}`;
+        baseButton.addEventListener("click", () => submitLookup(result.baseForm, result.language, false));
+        baseRow.append(baseButton);
+        lookupMessage.append(baseRow);
+
+        const enteredRow = document.createElement("div");
+        const enteredWord = document.createElement("span");
+        enteredWord.textContent = `${result.inputWord} (As entered)`;
+        enteredRow.append(enteredWord);
+        const enteredButton = document.createElement("button");
+        enteredButton.type = "button";
+        enteredButton.textContent = `Save ${result.inputWord}`;
+        enteredButton.addEventListener("click", () => submitLookup(result.inputWord, result.language, true));
+        enteredRow.append(enteredButton);
+        lookupMessage.append(enteredRow);
+
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.textContent = "Back to editing";
+        edit.addEventListener("click", () => { setMessage(lookupMessage, ""); wordInput.focus(); });
+        lookupMessage.append(edit);
         return;
       }
       const message = result.status === "created"
