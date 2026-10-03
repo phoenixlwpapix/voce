@@ -187,9 +187,8 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
     <section className="mx-auto w-full max-w-5xl px-5 pb-5 pt-4 sm:px-8 sm:pb-9 sm:pt-9 lg:pb-10 lg:pt-10" aria-labelledby="lookup-title">
       <div className="grid gap-5 border-b border-border/70 pb-5 sm:gap-7 sm:pb-9 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(26rem,1.2fr)] lg:items-end lg:gap-16">
         <div>
-          <p className="mb-3 hidden font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground sm:block">值得珍藏的词汇</p>
           <h1 id="lookup-title" className="max-w-xl font-serif text-[clamp(1.9rem,8vw,2.75rem)] font-normal leading-[0.98] tracking-[-0.055em] sm:text-[clamp(2.35rem,6vw,4.25rem)] sm:leading-[0.94]">
-            今天想记住什么？
+            今天想记点什么？
           </h1>
         </div>
 
