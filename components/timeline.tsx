@@ -96,7 +96,7 @@ export function Timeline({ language }: { language: Language }) {
               placeholder={languageKnown ? `搜索已保存的${languageNames[language]}词汇` : "搜索已保存词汇"}
               maxLength={80}
               autoComplete="off"
-              className="h-10 pl-7 pr-8 font-mono text-xs [&::-webkit-search-cancel-button]:appearance-none"
+              className="h-10 pl-7 pr-8 font-mono text-base placeholder:text-xs sm:text-xs [&::-webkit-search-cancel-button]:appearance-none"
             />
             {searchQuery ? (
               <Button
