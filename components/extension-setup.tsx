@@ -79,7 +79,7 @@ export function ExtensionSetup() {
         <div>
           <div className="flex items-center gap-3 text-muted-foreground">
             <Puzzle className="size-5" aria-hidden="true" />
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em]">浏览器配套插件</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em]">Chrome 划词扩展</p>
           </div>
           <h1 id="extension-title" className="mt-7 max-w-[11ch] font-serif text-[clamp(3.25rem,8vw,6.5rem)] leading-[0.92] tracking-[-0.055em]">
             无需离开网页，随时收录生词。
@@ -187,7 +187,7 @@ export function ExtensionSetup() {
             <DialogContent>
               <DialogTitle>断开与 {disconnectTarget?.name} 的连接？</DialogTitle>
               <DialogDescription>
-                仅此设备将失去访问权限，你的其他已连接设备不受影响。
+                断开后该设备将无法继续同步生词。其他已连接设备不受影响。
               </DialogDescription>
               <div className="mt-7 flex justify-end gap-3">
                 <DialogClose asChild><Button type="button" variant="ghost" disabled={revoking}>保持连接</Button></DialogClose>

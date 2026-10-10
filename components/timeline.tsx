@@ -142,8 +142,8 @@ export function Timeline({ language }: { language: Language }) {
         <div className="grid min-h-72 place-items-center border-b border-border text-center">
           <div className="max-w-sm py-14">
             <BookDashed className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
-            <h3 className="mt-5 font-serif text-2xl">{languageNames[language]}生词本还是空白的</h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">在上方输入框中添加你的第一个{languageNames[language]}词汇吧。</p>
+            <h3 className="mt-5 font-serif text-2xl">{languageNames[language]}生词本暂未收录词汇</h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">在上方输入生词，开启你的{languageNames[language]}词汇积累。</p>
           </div>
         </div>
       ) : sections.length === 0 ? (
@@ -156,7 +156,7 @@ export function Timeline({ language }: { language: Language }) {
               </>
             ) : (
               <>
-                <p className="font-serif text-xl">{formatMonthGroup(filterMonth)} 没有{languageNames[language]}词汇</p>
+                <p className="font-serif text-xl">{formatMonthGroup(filterMonth)} 暂未收录{languageNames[language]}词汇</p>
                 <Button type="button" variant="ghost" className="mt-3" onClick={() => setFilterMonth("")}>查看全部月份</Button>
               </>
             )}

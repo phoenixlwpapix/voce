@@ -24,7 +24,7 @@ export const lookupPlaceholderByLanguage: Record<Language, string> = {
 export const chineseLookupPlaceholderByLanguage: Record<Language, string> = {
   EN: "输入中文反查英语…",
   FR: "输入中文反查法语…",
-  ES: "输入中文反查西语…",
+  ES: "输入中文反查西班牙语…",
   JA: "输入中文反查日语…",
 };
 

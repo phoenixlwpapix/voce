@@ -97,7 +97,7 @@ function QuizSetup({ language, words, onStart }: {
             {available < count ? (
               <p className="mt-3 text-xs text-muted-foreground">
                 {available === 0
-                  ? "已保存的例句中没有包含原形未变的词汇，暂无可用填空题。"
+                  ? "现有例句中缺少适合填空的词汇，暂无法生成填空题。"
                   : `仅有 ${available} 个词汇符合当前题型要求。`}
               </p>
             ) : null}
@@ -137,16 +137,16 @@ function QuizResults({
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]}测验完成</p>
         <h1 className="mt-3 font-serif text-6xl tracking-[-0.05em]">{score} <span className="text-muted-foreground">/ {answers.length}</span></h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          {percent}% 正确率{missed.length === 0 ? " — 全部答对！" : "。"}
+          {percent}% 正确率{missed.length === 0 ? " · 全部答对，掌握出色！" : "。"}
         </p>
 
         {(appliedCount > 0 || pendingCount > 0) ? (
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted-foreground">
             {appliedCount > 0 ? (
-              <span>✓ {appliedCount} 个词汇已推进记忆周期 (FSRS)</span>
+              <span>✓ {appliedCount} 个词汇已巩固并推进记忆周期</span>
             ) : null}
             {pendingCount > 0 ? (
-              <span className="text-destructive">⚠ {pendingCount} 个词汇需重新复习</span>
+              <span className="text-destructive">↺ {pendingCount} 个词汇需重新强化温习</span>
             ) : null}
           </div>
         ) : null}

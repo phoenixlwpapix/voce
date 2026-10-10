@@ -97,7 +97,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       return;
     }
     if (!navigator.onLine) {
-      setError("You're offline. Reconnect and try again.");
+      setError("当前处于离线状态，请检查网络连接后重试。");
       return;
     }
 
@@ -170,10 +170,10 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       setSpelling(null);
       setFormChoice(null);
       setValue("");
-      toast.success(result.status === "created" ? `已添加 ${result.word}` : `${result.word} 已在生词本中`, {
+      toast.success(result.status === "created" ? `已添加 ${result.word}` : `${result.word} 已收录`, {
         description: result.status === "created"
           ? "已收录至本月词汇。"
-          : "已有词条保持不变。",
+          : "该词此前已在生词本中，复习周期保持不变。",
       });
     } catch (caughtError) {
       setError(getUserErrorMessage(caughtError));
@@ -261,9 +261,9 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       </div>
       <Dialog open={spelling !== null} onOpenChange={(open) => { if (!open && !submitting) setSpelling(null); }}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
-          <DialogTitle>检查拼写</DialogTitle>
+          <DialogTitle>确认词汇拼写</DialogTitle>
           <DialogDescription>
-            尚未为“{spelling?.inputWord}”保存任何内容。你想查的是不是以下词语？
+            未在词典中找到“{spelling?.inputWord}”，是否是指以下相近词？
           </DialogDescription>
           <div className="mt-6 space-y-3">
             {spelling?.suggestions.map((candidate, index) => {
@@ -306,9 +306,9 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       </Dialog>
       <Dialog open={formChoice !== null} onOpenChange={(open) => { if (!open && !submitting) setFormChoice(null); }}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
-          <DialogTitle>发现词典原形</DialogTitle>
+          <DialogTitle>建议收录词典原形</DialogTitle>
           <DialogDescription>
-            尚未为“{formChoice?.inputWord}”保存任何内容。是否保存该词的词典原形？
+            检测到输入为变体形式，建议优先收录词典原形以建立系统记忆：
           </DialogDescription>
           <div className="mt-6 space-y-3">
             <div className="border border-border bg-secondary/35 p-4">
@@ -362,11 +362,11 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
                   {formChoice?.inputWord}
                 </p>
                 <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  输入原样
+                  当前变体
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                保留你输入的当前变体形式
+                直接记录你输入的变体形式
               </p>
               <Button
                 variant="outline"
@@ -393,9 +393,9 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       </Dialog>
       <Dialog open={translation !== null} onOpenChange={(open) => { if (!open && !submitting) setTranslation(null); }}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); inputRef.current?.focus(); }}>
-          <DialogTitle>选择{translation ? languageNames[language] : "目标"}表达</DialogTitle>
+          <DialogTitle>选择{translation ? languageNames[language] : "目标"}地道表达</DialogTitle>
           <DialogDescription>
-            “{translation?.queryZh}”的常用表达。在你选择前不会保存任何内容。
+            为你找到“{translation?.queryZh}”的常用表达，点击即可收录至生词本：
           </DialogDescription>
           <div className="mt-6 space-y-3">
             {translation?.candidates.map((candidate, index) => {

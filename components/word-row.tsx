@@ -133,11 +133,11 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogTitle>删除“{word.word}”？</DialogTitle>
-                  <DialogDescription>该词汇的释义、例句与复习进度将被彻底删除，此操作无法撤销。</DialogDescription>
+                  <DialogTitle>彻底删除“{word.word}”？</DialogTitle>
+                  <DialogDescription>该词条的释义、例句与复习记忆进度将被删除，此操作无法撤销。</DialogDescription>
                   <div className="mt-7 flex justify-end gap-3">
                     <DialogClose asChild><Button type="button" variant="ghost" disabled={deleting}>保留词条</Button></DialogClose>
-                    <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? "正在删除…" : "彻底删除"}</Button>
+                    <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? "正在删除…" : "确认删除"}</Button>
                   </div>
                 </DialogContent>
               </Dialog>

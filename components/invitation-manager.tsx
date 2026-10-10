@@ -66,7 +66,7 @@ export function InvitationManager() {
     </div>
     <section className="mt-16 max-w-3xl border-t border-border pt-8">
       <h2 className="font-serif text-3xl">近期邀请记录</h2>
-      {invitations === undefined ? <p className="mt-5 text-sm text-muted-foreground">正在加载…</p> : invitations.length === 0 ? <p className="mt-5 text-sm text-muted-foreground">暂无邀请记录。</p> :
+      {invitations === undefined ? <p className="mt-5 text-sm text-muted-foreground">正在加载…</p> : invitations.length === 0 ? <p className="mt-5 text-sm text-muted-foreground">暂无近期邀请记录。</p> :
         <ul className="mt-5 divide-y divide-border">{invitations.map((item) => {
           const status = item.acceptedAt ? "已接受" : item.revokedAt ? "已撤销" : "未使用";
           return <li key={item.id} className="flex items-center justify-between gap-4 py-4"><div><p className="text-sm font-medium">{status}</p><p className="mt-1 text-xs text-muted-foreground">创建于 {new Date(item.createdAt).toLocaleDateString()} · 有效期至 {new Date(item.expiresAt).toLocaleDateString()}</p></div>{status === "未使用" ? <Button variant="ghost" size="icon" aria-label="撤销邀请" onClick={() => void revoke({ id: item.id }).catch((error: unknown) => toast.error(getUserErrorMessage(error)))}><X className="size-4" /></Button> : null}</li>;

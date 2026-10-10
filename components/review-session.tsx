@@ -163,8 +163,8 @@ export function ReviewSession() {
         <div className="max-w-md">
           <span className="mx-auto grid size-12 place-items-center rounded-full border border-border"><Check className="size-5" aria-hidden="true" /></span>
           <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]}复习完成</p>
-          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">今天的所有复习已完成</h1>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `本次已复习 ${reviewedCount} 个词汇。` : `当前没有需要复习的${languageNames[language]}词汇。`}</p>
+          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">今日复习已全部完成</h1>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `已温故 ${reviewedCount} 个词汇，记忆曲线已更新。` : `当前没有需要复习的${languageNames[language]}词汇。`}</p>
           <Button asChild className="mt-8"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回生词本</Link></Button>
         </div>
       </main>

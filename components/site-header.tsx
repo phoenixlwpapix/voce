@@ -62,7 +62,7 @@ export function SiteHeader({ language }: { language?: Language }) {
           <div className="absolute right-0 top-full z-40 mt-2 w-56 border border-border bg-background p-2 shadow-[0_16px_48px_rgba(0,0,0,0.16)]">
             <p className="px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">设置</p>
             <Link href="/extension" onClick={closeMenu} className="flex min-h-11 items-center gap-3 px-3 text-sm outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
-              <Puzzle className="size-4" aria-hidden="true" /> 浏览器插件配置
+              <Puzzle className="size-4" aria-hidden="true" /> Chrome 划词扩展
             </Link>
             {account?.role === "admin" ? <Link href="/invitations" onClick={closeMenu} className="flex min-h-11 items-center gap-3 px-3 text-sm outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"><UserPlus className="size-4" aria-hidden="true" /> 邀请新用户</Link> : null}
             <div onClick={closeMenu}><ThemeToggle showLabel /></div>
