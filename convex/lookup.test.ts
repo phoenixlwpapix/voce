@@ -75,6 +75,25 @@ test("a valid ambiguous word stays in the selected language", async () => {
   })).toMatchObject({ language: "EN", status: "created" });
 });
 
+test("English lookups repair British IPA before saving and request American pronunciation", async () => {
+  const t = await setup();
+  generateContent.mockResolvedValueOnce({ text: JSON.stringify({
+    status: "valid", language: "EN", word: "hello", phonetic: "həˈləʊ",
+    definitions: [{ partOfSpeech: "interjection", meaningZh: "你好" }],
+    examples: [
+      { target: "Hello, everyone!", translationZh: "大家好！" },
+      { target: "She said hello.", translationZh: "她打了招呼。" },
+    ],
+  }) }).mockResolvedValueOnce({ text: JSON.stringify({ phonetic: "həˈloʊ" }) });
+  expect((await t.action(api.lookup.lookupAndSave, {
+    inputWord: "hello", language: "EN", monthGroup: "2026-09",
+  })).status).toBe("created");
+  expect((await t.query(api.words.getWordsByMonth, { language: "EN" }))[0].phonetic).toBe("həˈloʊ");
+  expect(generateContent).toHaveBeenNthCalledWith(1, expect.objectContaining({
+    config: expect.objectContaining({ systemInstruction: expect.stringContaining("General American English") }),
+  }));
+});
+
 test("new Spanish nouns use one Spanish part-of-speech label and keep gender separate", async () => {
   const t = await setup();
   await t.mutation(api.account.setPreferredLanguage, { language: "ES" });

@@ -214,9 +214,10 @@ export async function conventionalPhonetic(
   language: Language,
   word: string,
   phonetic: string,
+  regenerationReason?: string,
 ): Promise<string> {
   const normalized = normalizePhonetic(phonetic, language);
-  const problem = phoneticProblem(normalized, language);
+  const problem = regenerationReason ?? phoneticProblem(normalized, language);
   if (problem === null) return normalized;
 
   const response = await ai.models.generateContent({

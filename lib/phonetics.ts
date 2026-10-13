@@ -2,7 +2,7 @@ import type { Language } from "./types";
 
 // Mirrors phoneticConvention in lib/entry-format.ts.
 const phoneticInventory: Record<Exclude<Language, "JA">, { symbols: string; vowels: string }> = {
-  EN: { symbols: "abdefhijklmnprstuvwzæðŋɑɒɔəɜɪʃʊʌʒθɡˈˌː", vowels: "aeiouæɑɒɔəɜɪʊʌ" },
+  EN: { symbols: "abdefhijklmnoprstuvwzæðŋɑɔəɚɝɪʃʊʌʒθɡˈˌː", vowels: "aeiouæɑɔəɚɝɪʊʌ" },
   FR: { symbols: "abdefijklmnopstuvwyzøœɑɔəɛɡɥɲŋʁʃʒ̃", vowels: "aeiouyøœɑɔəɛ" },
   ES: { symbols: "abdefijklmnoprstuwxθɡɲʝɾʃˈ", vowels: "aeiou" },
 };
@@ -59,6 +59,7 @@ export function phoneticProblem(value: string, language: Language): string | nul
   const decomposed = value.normalize("NFD");
   const invalid = [...new Set([...decomposed].filter((character) => character !== " " && !symbols.includes(character)))];
   if (invalid.length) return `Symbols outside the convention: ${invalid.join(" ")}.`;
+  if (language === "EN" && decomposed.includes("əʊ")) return "Use American oʊ instead of British əʊ.";
   if (language === "ES" && /(?<!t)ʃ/u.test(decomposed)) return "ʃ is only allowed in tʃ.";
 
   // Checked per transcription rather than per word: function words in a phrase may be unstressed.
