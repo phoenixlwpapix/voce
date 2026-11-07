@@ -2,7 +2,7 @@
 
 import { useAction } from "convex/react";
 import { useOwnerSession } from "@/hooks/use-owner-session";
-import { ArrowLeftRight, ArrowUpRight, Languages, LoaderCircle } from "lucide-react";
+import { ArrowLeftRight, ArrowUpRight, CircleCheck, Languages, LoaderCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import * as z from "zod/mini";
@@ -59,6 +59,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
   const [mode, setMode] = useState<LookupMode>("foreign");
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [existingWord, setExistingWord] = useState<string | null>(null);
   const [submittingTarget, setSubmittingTarget] = useState<string | null>(null);
   const submitting = submittingTarget !== null;
   const submissionLock = useRef(false);
@@ -83,6 +84,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
     setMode(nextMode);
     setValue("");
     setError(null);
+    setExistingWord(null);
     setSpelling(null);
     setFormChoice(null);
     setTranslation(null);
@@ -91,6 +93,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
 
   async function findFromChinese(queryZh: string, selectedLanguage: Language) {
     if (submissionLock.current || !account || languageSwitching) return;
+    setExistingWord(null);
     const validation = chineseInputSchema.safeParse(queryZh);
     if (!validation.success) {
       setError(validation.error.issues[0]?.message ?? "请输入有效的中文词语。");
@@ -132,6 +135,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
   ) {
     if (submissionLock.current || !account || languageSwitching) return;
 
+    setExistingWord(null);
     const validation = inputSchema.safeParse(inputWord);
     if (!validation.success) {
       setError(validation.error.issues[0]?.message ?? "输入无效。");
@@ -170,11 +174,11 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       setSpelling(null);
       setFormChoice(null);
       setValue("");
-      toast.success(result.status === "created" ? `已添加 ${result.word}` : `${result.word} 已收录`, {
-        description: result.status === "created"
-          ? "已收录至本月词汇。"
-          : "该词此前已在生词本中，复习周期保持不变。",
-      });
+      if (result.status === "existing") {
+        setExistingWord(result.word);
+      } else {
+        toast.success(`已添加 ${result.word}`, { description: "已收录至本月词汇。" });
+      }
     } catch (caughtError) {
       setError(getUserErrorMessage(caughtError));
     } finally {
@@ -200,7 +204,10 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
                 key={item}
                 type="button"
                 data-active={languageKnown && language === item}
-                onClick={() => onLanguageChange(item)}
+                onClick={() => {
+                  if (item !== language) setExistingWord(null);
+                  onLanguageChange(item);
+                }}
                 className={cn(
                   "min-h-10 border border-transparent px-3 font-mono text-[11px] tracking-[0.16em] text-muted-foreground outline-none transition-[color,background-color,border-color] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:font-medium data-[active=true]:text-foreground motion-reduce:transition-none sm:px-4",
                   languagePillClasses[item],
@@ -224,6 +231,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
               onChange={(event) => {
                 setValue(event.target.value);
                 if (error) setError(null);
+                if (existingWord) setExistingWord(null);
               }}
               placeholder={!languageKnown ? "" : mode === "chinese" ? chineseLookupPlaceholderByLanguage[language] : lookupPlaceholderByLanguage[language]}
               lang={mode === "chinese" ? "zh-CN" : localeByLanguage[language]}
@@ -256,6 +264,14 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
 
           <div className="mt-1 min-h-5 text-left text-xs">
             {error ? <p id="lookup-error" role="alert" className="text-destructive">{error}</p> : null}
+            <div role="status">
+              {existingWord ? (
+                <p className="mt-2 flex items-start gap-2 border border-border bg-secondary px-3 py-2 text-sm leading-5 text-foreground">
+                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+                  <span className="min-w-0 wrap-anywhere">「{existingWord}」已在词汇库中</span>
+                </p>
+              ) : null}
+            </div>
           </div>
         </form>
       </div>
