@@ -97,7 +97,7 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
           <div>
             <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
             <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-              个人词典
+              极简词典
             </p>
           </div>
         </div>
@@ -126,7 +126,7 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
             <div>
               <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
               <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-                个人词典
+                极简词典
               </p>
             </div>
           </div>
@@ -248,7 +248,7 @@ function AccountSetup() {
   return (
     <main className="grid min-h-dvh place-items-center px-5 text-center">
       <div>
-        <h1 className="font-serif text-3xl">正在准备你的个人词典</h1>
+        <h1 className="font-serif text-3xl">正在加载极简词典</h1>
         {error ? <Button className="mt-6" onClick={() => void initialize()}>重试设置</Button> : <p className="mt-4 text-sm text-muted-foreground">正在初始化账户及词汇数据…</p>}
       </div>
     </main>
@@ -268,7 +268,7 @@ function InvitationAcceptance({ token }: { token: string }) {
   return <main className="grid min-h-dvh place-items-center px-5 text-center">
     <div className="max-w-md border-y border-border py-14">
       <h1 className="font-serif text-4xl">加入 Voce</h1>
-      <p className="mt-4 text-sm text-muted-foreground">{error ?? "正在准备你的个人词典…"}</p>
+      <p className="mt-4 text-sm text-muted-foreground">{error ?? "正在加载极简词典…"}</p>
     </div>
   </main>;
 }
@@ -308,7 +308,7 @@ function SessionGate({ children, subject, signOut, inviteToken }: {
         <div className="max-w-md border-y border-border py-14">
           <LockKeyhole className="mx-auto size-5 text-muted-foreground" aria-hidden="true" />
           <h1 className="mt-6 font-serif text-4xl">访问受限</h1>
-          <p className="mt-4 text-sm text-muted-foreground">该账户无法访问此个人词典。</p>
+          <p className="mt-4 text-sm text-muted-foreground">该账户无法访问极简词典。</p>
           <Button variant="outline" className="mt-8" onClick={() => void signOut()}>退出登录</Button>
         </div>
       </main>

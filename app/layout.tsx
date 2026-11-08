@@ -12,8 +12,8 @@ const ipa = Noto_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-noto-
 const japanese = Noto_Sans_JP({ variable: "--font-noto-sans-jp", weight: ["400", "500"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Voce — 个人词典", template: "%s · Voce" },
-  description: "沉浸雅致的多语种生词本，支持英语、法语、西班牙语与日语。",
+  title: { default: "Voce — 极简词典", template: "%s · Voce — 极简词典" },
+  description: "Voce 极简词典支持英语、法语、西班牙语与日语查词、收藏和复习。",
   applicationName: "Voce",
   appleWebApp: {
     capable: true,

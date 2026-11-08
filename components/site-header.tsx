@@ -40,7 +40,7 @@ export function SiteHeader({ language }: { language?: Language }) {
     <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3 sm:px-8 sm:py-6">
       <Link href="/" className="group flex shrink-0 flex-col items-start gap-1 outline-none focus-visible:ring-2 focus-visible:ring-ring min-[390px]:flex-row min-[390px]:items-baseline min-[390px]:gap-2 sm:gap-3">
         <span className="font-serif text-2xl font-medium tracking-[-0.03em]">Voce</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">个人词典</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">极简词典</span>
       </Link>
       <nav className="flex items-center gap-1 sm:gap-2" aria-label="主导航">
         <Button asChild variant="ghost" size="default" className="px-2 text-xs sm:px-3">

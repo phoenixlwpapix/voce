@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Voce — Personal Lexicon",
+  "name": "Voce — 极简词典",
   "version": "1.2.0",
   "description": "Save selected words to your private Voce lexicon.",
   "minimum_chrome_version": "114",

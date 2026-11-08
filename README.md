@@ -1,4 +1,4 @@
-# Voce
+# Voce — 极简词典
 
 Voce is a quiet, invitation-only multilingual vocabulary notebook where each account collects and reviews its own English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams each collection in real time, a modern FSRS spaced repetition engine powers both flashcard review and adaptive quizzes, and a private Chrome companion saves words from any page.
 
