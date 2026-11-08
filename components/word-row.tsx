@@ -43,7 +43,7 @@ export function WordRow({ word, speechAvailable, onSpeak }: WordRowProps) {
   }
 
   return (
-    <article className="border-b border-border content-auto">
+    <article id={`word-${word._id}`} aria-label={word.word} tabIndex={-1} className="scroll-mt-14 border-b border-border focus:outline-2 focus:outline-ring content-auto">
       <div className="relative cursor-pointer transition-colors hover:bg-muted/30">
         <button
           type="button"

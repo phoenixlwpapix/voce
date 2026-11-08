@@ -23,7 +23,7 @@ import {
 import { getUserErrorMessage } from "@/lib/errors";
 import { getLocalMonthGroup } from "@/lib/month";
 import { cn } from "@/lib/utils";
-import { languages, type Language } from "@/lib/types";
+import { languages, type Language, type WordId } from "@/lib/types";
 
 const inputSchema = z.string().check(
   z.trim(),
@@ -50,16 +50,17 @@ type LookupFormProps = {
   language: Language;
   languageSwitching: boolean;
   onLanguageChange: (language: Language) => void;
+  onViewWord: (id: WordId) => void;
 };
 
-export function LookupForm({ language, languageSwitching, onLanguageChange }: LookupFormProps) {
+export function LookupForm({ language, languageSwitching, onLanguageChange, onViewWord }: LookupFormProps) {
   const account = useOwnerSession();
   const lookupAndSave = useAction(api.lookup.lookupAndSave);
   const findTranslationCandidates = useAction(api.translation.findCandidates);
   const [mode, setMode] = useState<LookupMode>("foreign");
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [existingWord, setExistingWord] = useState<string | null>(null);
+  const [existingWord, setExistingWord] = useState<{ id: WordId; word: string } | null>(null);
   const [submittingTarget, setSubmittingTarget] = useState<string | null>(null);
   const submitting = submittingTarget !== null;
   const submissionLock = useRef(false);
@@ -175,7 +176,7 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
       setFormChoice(null);
       setValue("");
       if (result.status === "existing") {
-        setExistingWord(result.word);
+        setExistingWord({ id: result.id, word: result.word });
       } else {
         toast.success(`已添加 ${result.word}`, { description: "已收录至本月词汇。" });
       }
@@ -264,12 +265,19 @@ export function LookupForm({ language, languageSwitching, onLanguageChange }: Lo
 
           <div className="mt-1 min-h-5 text-left text-xs">
             {error ? <p id="lookup-error" role="alert" className="text-destructive">{error}</p> : null}
-            <div role="status">
+            <div className={existingWord ? "mt-2 flex items-center gap-2 border border-border bg-secondary px-3 py-1" : undefined}>
+              <div role="status" className="flex min-w-0 flex-1 items-start gap-2 text-sm leading-5 text-foreground">
+                {existingWord ? (
+                  <>
+                    <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+                    <span className="min-w-0 wrap-anywhere">「{existingWord.word}」已在词汇库中</span>
+                  </>
+                ) : null}
+              </div>
               {existingWord ? (
-                <p className="mt-2 flex items-start gap-2 border border-border bg-secondary px-3 py-2 text-sm leading-5 text-foreground">
-                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
-                  <span className="min-w-0 wrap-anywhere">「{existingWord}」已在词汇库中</span>
-                </p>
+                <Button type="button" variant="outline" size="sm" className="min-h-11 shrink-0 bg-background" aria-label={`查看词条 ${existingWord.word}`} onClick={() => onViewWord(existingWord.id)}>
+                  查看
+                </Button>
               ) : null}
             </div>
           </div>

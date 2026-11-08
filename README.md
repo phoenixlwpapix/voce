@@ -228,7 +228,7 @@ Run `pnpm test` for IndexedDB isolation/corruption/failure tests and Convex init
 - Duplicate identity is `language + normalizedWord`; Unicode NFC normalization and locale-aware lowercasing preserve accented and Japanese text.
 - All vocabulary queries, mutations, review updates, and Gemini actions require an active account; duplicates are scoped to that account.
 - Extension requests authenticate with a revocable token minted from that account's one-time pairing code; raw pairing codes and tokens are never stored in Convex.
-- Duplicate lookups return the existing entry before calling Gemini, leaving its generated content, review progress, and original month unchanged. The home lookup shows an inline notice below the input until the next edit, lookup, or language change.
+- Duplicate lookups return the existing entry before calling Gemini, leaving its generated content, review progress, and original month unchanged. The home lookup shows an inline notice below the input until the next edit, lookup, or language change. Its View button scrolls to and focuses the saved entry in the timeline, clearing any search or month filter that hides it.
 - The home timeline and review queue both follow the persisted active learning language. Vocabulary and due-review queries filter by that language on the server; the timeline can instantly search its loaded entries by word, pronunciation, infinitive, grammar note, part of speech, or Chinese definition.
 - Gemini output is constrained by a JSON schema and validated again with Zod before any write.
 - Review interval and memory scheduling run inside Convex transactions using FSRS with review log auditing.

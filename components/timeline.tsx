@@ -3,7 +3,8 @@
 import { useCachedLexicon } from "@/hooks/use-cached-lexicon";
 import { useOwnerSession } from "@/hooks/use-owner-session";
 import { BookDashed, CalendarDays, Search, X } from "lucide-react";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,12 @@ import { WordRow } from "@/components/word-row";
 import { useSpeech } from "@/hooks/use-speech";
 import { languageNames, localeByLanguage } from "@/lib/constants";
 import { formatMonthGroup } from "@/lib/month";
-import type { Language, WordDocument } from "@/lib/types";
+import type { Language, WordDocument, WordId } from "@/lib/types";
 
 type MonthSection = { monthGroup: string; words: WordDocument[] };
+type WordJump = { id: WordId };
+
+export type TimelineHandle = { jumpToWord: (id: WordId) => void };
 
 function groupWords(words: WordDocument[]) {
   const grouped = new Map<string, WordDocument[]>();
@@ -45,14 +49,16 @@ function matchesSearch(word: WordDocument, query: string, language: Language) {
   );
 }
 
-export function Timeline({ language }: { language: Language }) {
-  const { words } = useCachedLexicon(language);
+export function Timeline({ language, ref }: { language: Language; ref: Ref<TimelineHandle> }) {
+  const { words, isRefreshing } = useCachedLexicon(language);
   // Until the session arrives, `language` is only a placeholder.
   const languageKnown = useOwnerSession() !== null;
   const { available: speechAvailable, speak } = useSpeech();
   const [filterMonth, setFilterMonth] = useState("");
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [wordJump, setWordJump] = useState<WordJump | null>(null);
+  const handledJump = useRef<WordJump | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const { languageWords, visibleWordCount, sections } = useMemo<{
     languageWords: WordDocument[];
@@ -73,6 +79,29 @@ export function Timeline({ language }: { language: Language }) {
       sections: groupWords(visibleWords),
     };
   }, [deferredSearchQuery, filterMonth, language, words]);
+
+  useImperativeHandle(ref, () => ({
+    jumpToWord(id) {
+      const word = languageWords.find((item) => item._id === id);
+      if (!word || !matchesSearch(word, searchQuery, language)) setSearchQuery("");
+      if (!word || (filterMonth && word.monthGroup !== filterMonth)) setFilterMonth("");
+      setWordJump({ id });
+    },
+  }), [filterMonth, language, languageWords, searchQuery]);
+
+  useEffect(() => {
+    if (!wordJump || handledJump.current === wordJump) return;
+    const row = document.getElementById(`word-${wordJump.id}`);
+    if (row) {
+      handledJump.current = wordJump;
+      row.focus({ preventScroll: true });
+      row.scrollIntoView({ block: "start" });
+    } else if (words !== undefined && !isRefreshing && !languageWords.some((word) => word._id === wordJump.id)) {
+      handledJump.current = wordJump;
+      toast.error("词条暂不可用，请重新查询。");
+    }
+  }, [isRefreshing, languageWords, sections, wordJump, words]);
+
   return (
     <section className="mx-auto w-full max-w-5xl px-5 pb-24 sm:px-8 sm:pb-32" aria-labelledby="timeline-title">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4 sm:mb-7 sm:gap-5">
