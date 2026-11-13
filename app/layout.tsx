@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Manrope, Newsreader, Noto_Sans, Noto_Sans_JP } from "next/font/google";
+import { IBM_Plex_Mono, Manrope, Newsreader, Noto_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Providers } from "@/components/providers";
 import { PwaClient } from "@/components/pwa-client";
 import "./globals.css";
@@ -9,7 +10,15 @@ const sans = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: 
 const mono = IBM_Plex_Mono({ subsets: ["latin"], variable: "--font-ibm-plex-mono", weight: ["400", "500"], display: "swap" });
 // IPA and Japanese glyphs appear only in word content, so they load on demand instead of competing with first paint.
 const ipa = Noto_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-noto-sans", weight: "400", display: "swap", preload: false });
-const japanese = Noto_Sans_JP({ variable: "--font-noto-sans-jp", weight: ["400", "500"], display: "swap" });
+const japanese = localFont({
+  src: "./fonts/noto-sans-jp.woff2",
+  variable: "--font-noto-sans-jp",
+  weight: "400 500",
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  fallback: ["sans-serif"],
+});
 
 export const metadata: Metadata = {
   title: { default: "Voce — 极简词典", template: "%s · Voce — 极简词典" },
