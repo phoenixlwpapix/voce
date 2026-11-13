@@ -104,6 +104,8 @@ pwsh -ExecutionPolicy Bypass -File .\scripts\generate-pwa-icons.ps1
 
 The unpacked Manifest V3 extension lives in `extension/` and talks only to the production Convex Site endpoint. It supports manual lookup from the toolbar popup and an **Add “selection” to Voce** context-menu action on selected page text. The extension reads the account's current learning language when it opens, writes popup language changes back to the same account preference, and refreshes the preference before a context-menu lookup. Selected text never changes the language automatically.
 
+Click the Voce title or logo in the popup to open [the Voce homepage](https://voce.studioyyh.com/) in a new tab. The popup shows the first Chinese definition for both newly saved words and words already in your lexicon. After a right-click lookup, hover over the Voce toolbar icon to see the save status and definition.
+
 Install and pair it:
 
 1. Open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked**.

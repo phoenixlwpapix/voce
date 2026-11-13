@@ -172,13 +172,14 @@ test("same-language duplicates preserve review progress and original month", asy
     monthGroup: "2026-08",
   });
   if (first.status !== "created") throw new Error("Expected a saved word");
+  expect(first.meaningZh).toBe("刷洗自己");
   await t.mutation(api.words.updateReviewState, { id: first.id, outcome: "remembered" });
   generateContent.mockClear();
   expect(await t.action(api.lookup.lookupAndSave, {
     inputWord: "cepillarse",
     language: "ES",
     monthGroup: "2026-09",
-  })).toMatchObject({ id: first.id, status: "existing", language: "ES" });
+  })).toMatchObject({ id: first.id, status: "existing", language: "ES", meaningZh: "刷洗自己" });
   const words = await t.query(api.words.getWordsByMonth, { language: "ES" });
   expect(words).toHaveLength(1);
   expect(words[0]).toMatchObject({ repetitions: 1, monthGroup: "2026-08" });

@@ -47,12 +47,25 @@ a {
 }
 
 .brand {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 11px;
+  justify-content: space-between;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--line);
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-link:hover .wordmark,
+.brand-link:focus-visible .wordmark {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .mark {
@@ -93,7 +106,7 @@ a {
 }
 
 .wordmark {
-  margin: 0;
+  display: block;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
   line-height: 1;
@@ -109,6 +122,7 @@ legend {
 }
 
 .eyebrow {
+  display: block;
   margin: 5px 0 0;
   color: var(--muted);
   font-size: 8px;
@@ -280,6 +294,14 @@ button:disabled {
 
 .message.success {
   color: var(--accent);
+}
+
+.lookup-meaning {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
 
 .rule {

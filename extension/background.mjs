@@ -56,7 +56,8 @@ async function addSelection(selectionText) {
     const message = result.status === "created"
       ? `Added ${result.word}`
       : `${result.word} is already saved`;
-    await setBadge("✓", `${message} · ${result.language ?? language}`);
+    const title = result.meaningZh ? `${message} — ${result.meaningZh}` : message;
+    await setBadge("✓", `${title} · ${result.language ?? language}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The lookup failed.";
     await setBadge("!", message, "#a33f35");

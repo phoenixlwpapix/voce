@@ -46,6 +46,7 @@ export const upsertLookupResult = internalMutation({
     id: v.id("words"),
     status: v.union(v.literal("created"), v.literal("existing")),
     word: v.string(),
+    meaningZh: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     const phonetic = normalizePhonetic(args.result.phonetic, args.language);
@@ -62,7 +63,12 @@ export const upsertLookupResult = internalMutation({
     const now = Date.now();
 
     if (existing) {
-      return { id: existing._id, status: "existing" as const, word: existing.word };
+      return {
+        id: existing._id,
+        status: "existing" as const,
+        word: existing.word,
+        meaningZh: existing.definitions[0]?.meaningZh,
+      };
     }
 
     const id = await ctx.db.insert("words", {
@@ -84,6 +90,11 @@ export const upsertLookupResult = internalMutation({
       updatedAt: now,
     });
 
-    return { id, status: "created" as const, word: args.result.word };
+    return {
+      id,
+      status: "created" as const,
+      word: args.result.word,
+      meaningZh: args.result.definitions[0]?.meaningZh,
+    };
   },
 });

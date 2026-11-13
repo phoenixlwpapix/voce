@@ -319,7 +319,13 @@ export async function lookupAndSaveForOwner(
     if (!args.saveInflected && existing.baseForm && existing.meaningZh && normalizeWord(existing.baseForm, args.language) !== normalizedWord) {
       return { status: "form_choice", inputWord, baseForm: existing.baseForm, language: args.language, meaningZh: existing.meaningZh };
     }
-    return { id: existing.id, word: existing.word, status: "existing", language: args.language };
+    return {
+      id: existing.id,
+      word: existing.word,
+      status: "existing",
+      language: args.language,
+      meaningZh: existing.meaningZh,
+    };
   }
 
   const apiKey = process.env.GEMINI_API_KEY;

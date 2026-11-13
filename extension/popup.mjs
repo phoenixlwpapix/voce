@@ -187,6 +187,13 @@ function submitLookup(word, requestedLanguage, saveInflected = false) {
         ? `Added ${result.word}`
         : `${result.word} is already saved`;
       setMessage(lookupMessage, message);
+      if (result.meaningZh) {
+        const meaning = document.createElement("span");
+        meaning.className = "lookup-meaning";
+        meaning.lang = "zh-CN";
+        meaning.textContent = result.meaningZh;
+        lookupMessage.append(meaning);
+      }
       wordInput.value = "";
       wordInput.focus();
     })
