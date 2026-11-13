@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef, type Ref } from "react";
 import { SignOutContext, useOwnerSession } from "@/hooks/use-owner-session";
 import Link from "next/link";
 import { BookOpenText, ListChecks, LogOut, Puzzle, Settings2, UserPlus } from "lucide-react";
@@ -9,7 +9,7 @@ import { VocabularyExport } from "@/components/vocabulary-export";
 import { Button } from "@/components/ui/button";
 import type { Language } from "@/lib/types";
 
-export function SiteHeader({ language }: { language?: Language }) {
+export function SiteHeader({ language, ref }: { language?: Language; ref?: Ref<HTMLElement> }) {
   const signOut = useContext(SignOutContext);
   const account = useOwnerSession();
   const menuRef = useRef<HTMLDetailsElement>(null);
@@ -37,7 +37,7 @@ export function SiteHeader({ language }: { language?: Language }) {
   }
 
   return (
-    <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3 sm:px-8 sm:py-6">
+    <header ref={ref} tabIndex={ref ? -1 : undefined} className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3 sm:px-8 sm:py-6">
       <Link href="/" className="group flex shrink-0 flex-col items-start gap-1 outline-none focus-visible:ring-2 focus-visible:ring-ring min-[390px]:flex-row min-[390px]:items-baseline min-[390px]:gap-2 sm:gap-3">
         <span className="font-serif text-2xl font-medium tracking-[-0.03em]">Voce</span>
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">极简词典</span>
