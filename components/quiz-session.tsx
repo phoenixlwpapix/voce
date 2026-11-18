@@ -49,50 +49,51 @@ function QuizSetup({ language, words, onStart }: {
   }, [words]);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 py-5 sm:px-8 sm:py-7">
-      <header className="flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回</Link></Button>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{languageNames[language]} · {words.length} 词</p>
+    <main className="mx-auto w-full max-w-2xl px-5 pb-12 pt-4 sm:px-8 sm:pt-7">
+      <header className="flex items-center justify-between gap-3 border-b border-border pb-3">
+        <Button asChild variant="ghost" className="-ml-2 border-0 px-2 text-xs"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回生词本</Link></Button>
+        <p className="text-xs text-muted-foreground">{languageNames[language]} · {words.length} 词</p>
       </header>
-      <section className="flex flex-1 flex-col justify-center py-10">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]}测验</p>
-        <h1 className="mt-3 font-serif text-[clamp(2.5rem,9vw,4rem)] leading-[0.95] tracking-[-0.05em]">检验你的词汇积累</h1>
-        <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">基于你个人生词本生成的四选一练习题。优先抽取待复习词汇，边练边推进记忆周期。</p>
+      <section className="pt-7 sm:pt-10" aria-labelledby="quiz-setup-title">
+        <h1 id="quiz-setup-title" className="font-serif text-[clamp(2rem,1.45rem+2.75vw,3.75rem)] leading-tight tracking-[-0.045em]">词汇测验</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">用生词本里的词做四选一练习，优先抽取待复习词汇。</p>
         {dueCount > 0 ? (
-          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            {dueCount} 个待复习词汇 · 优先测验
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">今日待复习 {dueCount} 词</p>
         ) : null}
 
         {tooFew ? (
-          <p className="mt-10 border-y border-border py-6 text-sm text-muted-foreground">生词本中至少需要保存 {minimumQuizWords} 个{languageNames[language]}词汇才能开始测验。</p>
+          <div className="mt-6 border border-border bg-secondary/45 p-5 sm:p-7">
+            <h2 className="text-base font-semibold">还需要 {minimumQuizWords - words.length} 个词</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">在生词本里累计保存 {minimumQuizWords} 个{languageNames[language]}词汇后，即可开始测验。</p>
+            <Button asChild variant="outline" className="mt-4"><Link href="/">去查词<ArrowRight className="size-4" aria-hidden="true" /></Link></Button>
+          </div>
         ) : (
           <>
-            <fieldset className="mt-10">
-              <legend className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">题目数量</legend>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {questionCounts.map((value) => (
-                  <button key={value} type="button" onClick={() => setCount(value)} aria-pressed={count === value}
-                    className="h-11 border border-border font-mono text-sm outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-foreground aria-pressed:bg-secondary motion-reduce:transition-none">
-                    {value}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
             <fieldset className="mt-7">
-              <legend className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">题型设置</legend>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {modes.map((option) => (
-                  <button key={option.value} type="button" onClick={() => setMode(option.value)} aria-pressed={mode === option.value}
-                    className="flex min-h-14 flex-col items-start justify-center border border-border px-4 text-left outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-foreground aria-pressed:bg-secondary motion-reduce:transition-none">
-                    <span className="text-sm font-medium">{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
-                  </button>
+              <legend className="text-sm font-semibold">题目数量</legend>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {questionCounts.map((value) => (
+                  <label key={value} className="grid min-h-11 cursor-pointer place-items-center border border-border text-sm tabular-nums hover:bg-secondary has-checked:border-foreground! has-checked:bg-secondary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background">
+                    <input type="radio" name="quiz-count" className="sr-only" value={value} checked={count === value} onChange={() => setCount(value)} />
+                    {value} 题
+                  </label>
                 ))}
               </div>
             </fieldset>
-            <Button className="mt-10 h-12" disabled={available === 0} onClick={() => onStart(count, mode)}>
-              开始 {Math.min(count, available)} 题测验<ArrowRight className="size-4" aria-hidden="true" />
+            <fieldset className="mt-6">
+              <legend className="text-sm font-semibold">题型</legend>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {modes.map((option) => (
+                  <label key={option.value} className="flex min-h-16 cursor-pointer flex-col justify-center gap-1 border border-border px-3 py-2 hover:bg-secondary has-checked:border-foreground! has-checked:bg-secondary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background sm:px-4">
+                    <input type="radio" name="quiz-mode" className="sr-only" value={option.value} checked={mode === option.value} onChange={() => setMode(option.value)} />
+                    <span className="text-sm font-medium">{option.label}</span>
+                    <span className="text-xs leading-5 text-muted-foreground">{option.description}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <Button type="button" className="mt-6 h-12 w-full justify-between" disabled={available === 0} onClick={() => onStart(count, mode)}>
+              {available === 0 ? "暂无可用题目" : `开始 ${Math.min(count, available)} 题测验`}<ArrowRight className="size-4" aria-hidden="true" />
             </Button>
             {available < count ? (
               <p className="mt-3 text-xs text-muted-foreground">

@@ -2,7 +2,7 @@
 
 import { useAuthActions, useAuthToken, useConvexAuth } from "@convex-dev/auth/react";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { ArrowRight, KeyRound, LoaderCircle, LockKeyhole } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { decodeJwt } from "jose";
@@ -13,6 +13,8 @@ import { clearCachedSession, readCachedSession, writeCachedSession } from "@/lib
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LanguageBadge } from "@/components/language-badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type AuthMode = "signIn" | "signUp";
 
@@ -36,6 +38,9 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
   const [mode, setMode] = useState<AuthMode>(invited ? "signUp" : "signIn");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const signingIn = mode === "signIn";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,147 +85,114 @@ function SignInScreen({ inviteToken }: { inviteToken: string | null }) {
   function changeMode(nextMode: AuthMode) {
     setMode(nextMode);
     setError(null);
+    setPasswordVisible(false);
+    requestAnimationFrame(() => headingRef.current?.focus());
   }
 
   return (
-    <main className="grid min-h-dvh lg:grid-cols-[minmax(0,1.12fr)_minmax(28rem,0.88fr)]">
-      <section className="hidden border-r border-border bg-secondary/35 p-12 lg:flex lg:flex-col lg:justify-between">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/icon.svg"
-            alt=""
-            width={44}
-            height={44}
-            priority
-            className="size-11 rounded-[0.7rem]"
-          />
-          <div>
-            <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
-            <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-              极简词典
-            </p>
-          </div>
+    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5 sm:px-8">
+      <header className="flex items-center justify-between border-b border-border py-3 sm:py-6">
+        <div className="flex items-center gap-3">
+          <Image src="/icon.svg" alt="" width={36} height={36} className="size-9" />
+          <span className="font-serif text-2xl font-medium tracking-[-0.03em]">Voce</span>
+          <span className="text-xs text-muted-foreground">极简词典</span>
         </div>
+        <ThemeToggle />
+      </header>
 
-        <div className="max-w-xl pb-[6vh]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            让生词在此沉淀
-          </p>
-          <h2 className="mt-7 max-w-[9ch] font-serif text-[clamp(3.5rem,5.5vw,6rem)] leading-[0.88] tracking-[-0.06em]">
-            值得一再回顾的词汇
-          </h2>
-          <p className="mt-9 text-base leading-7 text-muted-foreground">
-            记录、重温、融会贯通。
-          </p>
-        </div>
-
-        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-          英语 · 法语 · 西班牙语 · 日语
-        </p>
-      </section>
-
-      <section className="flex min-h-dvh items-center px-5 py-12 sm:px-10 lg:px-16">
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-12 flex items-center gap-3 lg:hidden">
-            <Image src="/icon.svg" alt="" width={36} height={36} priority className="size-9 rounded-[0.6rem]" />
-            <div>
-              <p className="font-serif text-3xl leading-none tracking-[-0.04em]">Voce</p>
-              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-                极简词典
-              </p>
-            </div>
-          </div>
-
-          <KeyRound className="size-5 text-muted-foreground" aria-hidden="true" />
-          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-            专属访问
-          </p>
-          <h1 className="mt-3 font-serif text-5xl tracking-[-0.05em] sm:text-6xl">
-            {mode === "signIn" ? "欢迎回来" : "创建新账户"}
+      <div className="mx-auto grid w-full max-w-sm items-center gap-12 pb-12 pt-10 sm:my-auto sm:py-16 md:max-w-5xl md:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-20 lg:px-8">
+        <section className="min-w-0" aria-labelledby="auth-title">
+          <h1 id="auth-title" ref={headingRef} tabIndex={-1} className="font-serif text-[clamp(2rem,1.45rem+2.75vw,3.75rem)] leading-tight tracking-[-0.045em] outline-none">
+            {signingIn ? "登录 Voce" : "创建账户"}
           </h1>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            {mode === "signIn"
-              ? "登录以继续记录和复习生词。"
-              : invited ? "创建账户以接受邀请，开启你的专属词典。" : "Voce 仅限邀请使用。请通过邀请链接打开并注册账户。"}
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {signingIn
+              ? invited ? "登录已有账户以接受邀请。" : "打开你的生词本，继续查词和复习。"
+              : invited ? "接受邀请，开启你的生词本。" : "Voce 采用邀请制。受邀用户请从邀请链接注册。"}
           </p>
 
-          <div className="mt-10 grid grid-cols-2 border-y border-border" role="tablist" aria-label="账户选项">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "signIn"}
-              onClick={() => changeMode("signIn")}
-              className="h-11 border-r border-border text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring aria-selected:bg-secondary aria-selected:text-foreground motion-reduce:transition-none"
-            >
-              登录
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "signUp"}
-              onClick={() => changeMode("signUp")}
-              className="h-11 text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring aria-selected:bg-secondary aria-selected:text-foreground motion-reduce:transition-none"
-            >
-              注册账户
-            </button>
-          </div>
-
-          <form className="mt-8" onSubmit={handleSubmit} noValidate>
+          <form className="mt-7 space-y-5" onSubmit={handleSubmit} onInput={() => { if (error) setError(null); }}>
             <div>
-              <label htmlFor="auth-email" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                电子邮箱
-              </label>
+              <label htmlFor="auth-email" className="block text-sm font-medium">电子邮箱</label>
               <Input
                 id="auth-email"
                 name="email"
                 type="email"
                 inputMode="email"
-                autoComplete="email"
+                autoComplete="username"
+                spellCheck={false}
+                enterKeyHint="next"
                 placeholder="you@example.com"
                 required
                 disabled={submitting}
                 className="mt-2"
               />
             </div>
-            <div className="mt-6">
-              <label htmlFor="auth-password" className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                密码
-              </label>
-              <Input
-                id="auth-password"
-                name="password"
-                type="password"
-                autoComplete={mode === "signIn" ? "current-password" : "new-password"}
-                placeholder="至少 8 位字符"
-                minLength={8}
-                required
-                disabled={submitting}
-                className="mt-2"
-                aria-describedby={error ? "auth-error" : undefined}
-                aria-invalid={Boolean(error)}
-              />
+            <div>
+              <label htmlFor="auth-password" className="block text-sm font-medium">密码</label>
+              <div className="relative mt-2">
+                <Input
+                  id="auth-password"
+                  name="password"
+                  type={passwordVisible ? "text" : "password"}
+                  autoComplete={signingIn ? "current-password" : "new-password"}
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  enterKeyHint="done"
+                  minLength={8}
+                  required
+                  disabled={submitting}
+                  className="pr-12"
+                  aria-describedby={signingIn ? undefined : "password-hint"}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0.5 border-0"
+                  aria-label={passwordVisible ? "隐藏密码" : "显示密码"}
+                  aria-controls="auth-password"
+                  onClick={() => setPasswordVisible(!passwordVisible)}
+                >
+                  {passwordVisible ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+                </Button>
+              </div>
+              {signingIn ? null : <p id="password-hint" className="mt-2 text-xs text-muted-foreground">至少 8 个字符。</p>}
             </div>
 
-            <div className="mt-3 min-h-6">
-              {error ? (
-                <p id="auth-error" role="alert" className="text-xs leading-5 text-destructive">
-                  {error}
-                </p>
-              ) : null}
-            </div>
-
-            <Button type="submit" className="mt-4 w-full" disabled={submitting}>
+            {error ? <p role="alert" className="border-l-2 border-destructive/50 pl-3 text-sm leading-5 text-destructive">{error}</p> : null}
+            <Button type="submit" className="h-12 w-full justify-between" disabled={submitting}>
+              {submitting ? signingIn ? "正在登录…" : "正在创建账户…" : signingIn ? "登录" : "创建账户"}
               {submitting ? (
                 <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
               ) : (
                 <ArrowRight className="size-4" aria-hidden="true" />
               )}
-              {submitting ? "正在验证…" : mode === "signIn" ? "登录 Voce" : "创建并进入 Voce"}
             </Button>
           </form>
 
-        </div>
-      </section>
+          <div className="mt-4 flex flex-wrap items-center gap-x-1.5 text-sm">
+            <span className="text-muted-foreground">{signingIn ? "还没有账户？" : "已有账户？"}</span>
+            <Button type="button" variant="ghost" className="border-0 px-2 text-foreground underline decoration-border underline-offset-4 hover:decoration-current" disabled={submitting} onClick={() => changeMode(signingIn ? "signUp" : "signIn")}>
+              {signingIn ? "创建账户" : "返回登录"}
+            </Button>
+          </div>
+        </section>
+
+        <figure className="hidden min-w-0 border border-border bg-secondary/50 p-8 md:block lg:p-12">
+          <figcaption className="flex items-center justify-between gap-4 border-b border-border pb-4 text-xs text-muted-foreground">
+            生词本预览
+            <LanguageBadge language="EN" />
+          </figcaption>
+          <p lang="en" className="mt-7 font-serif text-[clamp(2.25rem,1rem+3.1vw,4rem)] leading-none tracking-[-0.05em]">serendipity</p>
+          <p className="mt-3 font-ipa text-sm text-muted-foreground">/ˌser.ənˈdɪp.ə.t̬i/</p>
+          <p className="mt-6 text-sm leading-6"><i lang="en" className="mr-3 text-muted-foreground">noun</i>机缘巧合，意外发现美好事物</p>
+          <blockquote className="mt-7 border-l border-border pl-4">
+            <p lang="en" className="font-serif text-lg leading-snug">It was pure serendipity that we found the bookshop.</p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">我们找到那家书店纯属机缘巧合。</p>
+          </blockquote>
+        </figure>
+      </div>
     </main>
   );
 }

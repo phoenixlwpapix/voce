@@ -2,7 +2,7 @@
 
 Voce is a quiet, invitation-only multilingual vocabulary notebook where each account collects and reviews its own English, French, Spanish, and Japanese words. Gemini creates validated Chinese learning notes, Convex stores and streams each collection in real time, a modern FSRS spaced repetition engine powers both flashcard review and adaptive quizzes, and a private Chrome companion saves words from any page.
 
-The editorial interface uses English throughout and includes a responsive split-screen sign-in cover built around Voce's open-book mark. The signed-in home view keeps Review and Quiz in the masthead and groups extension setup, appearance, CSV export, and sign-out in Settings on both phone and desktop. On phones, the heading and lookup form use less vertical space, lookup direction sits beside the input, and timeline search and month filtering share a row so the newest word and its Chinese meaning appear sooner. Month and count headings remain visible while scrolling each month's entries, until the next month takes over. Each vocabulary row toggles its full learning details when clicked or activated from the keyboard, while its pronunciation control remains independent. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
+The Simplified Chinese interface puts the sign-in form first, with a theme switch, a password visibility control, and a sample vocabulary entry on wider screens. The signed-in home view keeps Review and Quiz in the masthead and groups extension setup, appearance, CSV export, and sign-out in Settings on both phone and desktop. On phones, the heading and lookup form use less vertical space, lookup direction sits beside the input, and timeline search and month filtering share a row so the newest word and its Chinese meaning appear sooner. Month and count headings remain visible while scrolling each month's entries, until the next month takes over. Each vocabulary row toggles its full learning details when clicked or activated from the keyboard, while its pronunciation control remains independent. Lookup placeholders stay native to English, French, Spanish, and Japanese, while generated learning definitions and translations remain in Simplified Chinese.
 
 Each account has one active learning language. New accounts start in English; choosing English, French, Spanish, or Japanese on the home screen saves that preference in Convex, filters the timeline at the query boundary, and restores the same language on the next visit or another device. Review and Quiz open directly into the due queue for that active language.
 
@@ -113,7 +113,7 @@ Install and pair it:
 1. Open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked**.
 2. Select this repository's `extension` directory.
 3. Sign in to Voce and open `/extension` from the header.
-4. Generate a one-time pairing code, open the extension popup, and redeem the code within ten minutes.
+4. Under **配对新设备**, generate and copy a one-time pairing code, then redeem it in the extension popup within ten minutes. The **已连接设备** section lists connections and lets you disconnect each device.
 
 The extension requests only `contextMenus`, `storage`, and host access to `https://grateful-caterpillar-393.convex.site/*`. It injects no content script and does not request browser-history or all-sites read access. Pairing codes and access tokens are stored only as SHA-256 hashes in Convex; each installation keeps its own device ID and access token in extension-local storage restricted to trusted extension contexts. Pairing another computer does not invalidate existing devices, and each device can be revoked independently from `/extension`.
 
@@ -127,9 +127,9 @@ If the production Convex deployment name changes, update both `host_permissions`
 
 ## First account
 
-Choose **Create account** on the login screen and register with the email configured as `APP_OWNER_EMAIL` and a password of at least eight characters. That account becomes the admin. Existing words are assigned to it automatically in batches.
+Choose **创建账户** on the login screen and register with the email configured as `APP_OWNER_EMAIL` and a password of at least eight characters. That account becomes the admin. Existing words are assigned to it automatically in batches.
 
-To invite a friend, open **Settings → Invite people**, generate a link, and send it privately. Each link can be redeemed once within seven days. The recipient opens it, creates an account (or signs in), and receives a separate personal lexicon. The full link is displayed only when generated; unused invitations can be revoked from the same page. Accounts without a redeemed invitation can authenticate but cannot access words or Gemini actions. The admin's existing data stays with the original account.
+To invite a friend, open **设置 → 邀请新用户**, generate a link, and send it privately. Each link can be redeemed once within seven days. The recipient opens it, creates an account (or signs in), and receives a separate personal lexicon. The full link appears when generated. Use **近期邀请** to check status or revoke unused links. Accounts without a redeemed invitation can authenticate but cannot access words or Gemini actions. The admin's existing data stays with the original account.
 
 ## Verification and production build
 

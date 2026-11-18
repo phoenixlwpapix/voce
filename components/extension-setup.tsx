@@ -1,11 +1,12 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import { Check, Copy, Laptop, LoaderCircle, Puzzle, ShieldCheck, Unplug } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, KeyRound, Laptop, LoaderCircle, Puzzle } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { SettingsPage } from "@/components/settings-page";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +33,8 @@ export function ExtensionSetup() {
   const [revoking, setRevoking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [disconnectTarget, setDisconnectTarget] = useState<Device | null>(null);
+  const disconnectTrigger = useRef<HTMLButtonElement>(null);
+  const devicesHeading = useRef<HTMLHeadingElement>(null);
 
   async function handleGenerate() {
     if (generating) return;
@@ -61,9 +64,8 @@ export function ExtensionSetup() {
     if (revoking || !disconnectTarget) return;
     setRevoking(true);
     try {
-      await revoke({
-        deviceId: disconnectTarget.id === "legacy" ? "legacy" : disconnectTarget.id,
-      });
+      await revoke({ deviceId: disconnectTarget.id });
+      disconnectTrigger.current = null;
       setDisconnectTarget(null);
       toast.success(`已断开与 ${disconnectTarget.name} 的连接`);
     } catch (error) {
@@ -74,131 +76,111 @@ export function ExtensionSetup() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 pb-24 pt-10 sm:px-8 sm:pt-16">
-      <section className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)] lg:gap-20" aria-labelledby="extension-title">
-        <div>
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <Puzzle className="size-5" aria-hidden="true" />
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em]">Chrome 划词扩展</p>
-          </div>
-          <h1 id="extension-title" className="mt-7 max-w-[11ch] font-serif text-[clamp(3.25rem,8vw,6.5rem)] leading-[0.92] tracking-[-0.055em]">
-            无需离开网页，随时收录生词。
-          </h1>
-          <p className="mt-8 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-            在 Chrome 中划词右键，即可直接加入你的专属生词本。插件与 Voce 同步复用 Gemini 查词、去重逻辑与记忆周期。
-          </p>
-
-          <ol className="mt-12 border-t border-border">
-            {[
-              ["01", "在 Chrome 中打开 chrome://extensions 并开启右上角的“开发者模式”。"],
-              ["02", "点击“加载已解压的扩展程序”，选择本仓库中的 extension 目录。"],
-              ["03", "打开 Voce 浏览器插件，粘贴配对码即可完成绑定。"],
-            ].map(([number, instruction]) => (
-              <li key={number} className="grid grid-cols-[2.5rem_1fr] gap-4 border-b border-border py-5 text-sm leading-6">
-                <span className="font-mono text-[10px] text-muted-foreground">{number}</span>
-                <span>{instruction}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <aside className="self-start border-y border-border py-8 lg:mt-16" aria-label="插件连接">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">连接状态</p>
-              <p className="mt-2 text-sm font-medium">
-                {devices === undefined
-                  ? "正在检查…"
-                  : devices.length === 0
-                    ? "暂无已连接设备"
-                    : `已连接 ${devices.length} 台设备`}
-              </p>
-            </div>
-            <span className="grid size-10 place-items-center rounded-full border border-border" aria-hidden="true">
-              {devices === undefined ? (
-                <LoaderCircle className="size-4 animate-spin text-muted-foreground motion-reduce:animate-none" />
-              ) : devices.length > 0 ? (
-                <ShieldCheck className="size-4 text-ja" />
-              ) : (
-                <Puzzle className="size-4 text-muted-foreground" />
-              )}
-            </span>
-          </div>
-
-          <div className="mt-8 border-t border-border pt-8">
-            <p className="text-xs leading-5 text-muted-foreground">
-              安装插件后生成一次性配对码。配对码有效期为 10 分钟，且仅可兑换一次。
-            </p>
+    <SettingsPage title="Chrome 划词扩展" description="连接浏览器后，选中网页里的词语，用右键菜单将它保存到生词本。">
+      <div className="mt-6 grid items-start gap-8 md:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:gap-12">
+        <section className="min-w-0 border border-border bg-secondary/45 p-5 sm:p-7" aria-labelledby="pairing-title">
+          <h2 id="pairing-title" className="flex items-center gap-2.5 text-base font-semibold">
+            <KeyRound className="size-4 text-muted-foreground" aria-hidden="true" />配对新设备
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">在扩展弹窗输入配对码。每个码仅可使用一次，10 分钟内有效。</p>
+          <div aria-live="polite" className={pairing ? "mt-5" : undefined}>
             {pairing ? (
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => void handleCopy()}
-                  className="flex min-h-16 w-full items-center justify-between gap-3 border border-border px-4 text-left outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-                  aria-label="复制配对码"
-                >
-                  <code className="font-mono text-sm tracking-[0.12em]">{pairing.code}</code>
-                  {copied ? <Check className="size-4 text-ja" aria-hidden="true" /> : <Copy className="size-4 text-muted-foreground" aria-hidden="true" />}
-                </button>
-                <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
-                  有效期至 {new Date(pairing.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              <>
+                <div className="flex items-center justify-between gap-2 border border-border bg-background p-1.5 pl-3 sm:pl-4">
+                  <code className="min-w-0 select-all font-mono text-base font-medium tracking-wider sm:text-xl">{pairing.code}</code>
+                  <Button type="button" variant="ghost" className="shrink-0 border-0 px-2.5 text-xs" onClick={() => void handleCopy()} aria-label={copied ? "已复制配对码，再复制一次" : "复制配对码"}>
+                    {copied ? <Check className="size-4 text-success" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+                    {copied ? "已复制" : "复制"}
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  有效期至 <time dateTime={new Date(pairing.expiresAt).toISOString()}>{new Date(pairing.expiresAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}</time>
                 </p>
-              </div>
+              </>
             ) : null}
+          </div>
+          <Button type="button" variant={pairing ? "outline" : "default"} className="mt-5 w-full sm:w-auto" onClick={() => void handleGenerate()} disabled={generating}>
+            {generating ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
+            {generating ? "正在生成…" : pairing ? "生成新配对码" : "生成配对码"}
+          </Button>
+        </section>
 
-            <Button type="button" className="mt-6 w-full" onClick={() => void handleGenerate()} disabled={generating}>
-              {generating ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Puzzle className="size-4" aria-hidden="true" />}
-              {generating ? "正在生成…" : pairing ? "生成新配对码" : "生成配对码"}
+        <section className="min-w-0 md:col-start-1 md:row-start-2" aria-labelledby="devices-title">
+          <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+            <h2 id="devices-title" ref={devicesHeading} tabIndex={-1} className="text-base font-semibold focus:outline-none">已连接设备</h2>
+            {devices ? <p className="shrink-0 text-xs tabular-nums text-muted-foreground" role="status">{devices.length} 台</p> : null}
+          </div>
+          {devices === undefined ? (
+            <p role="status" className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+              <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />正在加载设备…
+            </p>
+          ) : devices.length === 0 ? (
+            <p className="flex items-center gap-3 py-4 text-sm leading-6 text-muted-foreground">
+              <Laptop className="size-4 shrink-0" aria-hidden="true" />配对成功后，设备会显示在这里。
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {devices.map((device) => (
+                <li key={device.id} className="flex items-center gap-2 py-3 sm:gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center bg-secondary" aria-hidden="true">
+                    <Laptop className="size-4 text-muted-foreground" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium wrap-anywhere">{device.name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">连接于 {new Date(device.connectedAt).toLocaleDateString("zh-CN")}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="shrink-0 border-0 px-2 text-xs hover:text-destructive"
+                    onClick={(event) => { disconnectTrigger.current = event.currentTarget; setDisconnectTarget(device); }}
+                    aria-label={`断开与 ${device.name} 的连接`}
+                  >
+                    断开
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="min-w-0 md:col-start-2 md:row-span-2 md:row-start-1" aria-labelledby="install-title">
+          <h2 id="install-title" className="flex items-center gap-2.5 text-base font-semibold">
+            <Puzzle className="size-4 text-muted-foreground" aria-hidden="true" />安装扩展
+          </h2>
+          <ol role="list" className="mt-3 divide-y divide-border border-y border-border text-sm leading-6">
+            <li className="flex gap-3 py-3">
+              <span className="font-mono text-xs leading-6 text-muted-foreground" aria-hidden="true">1</span>
+              <span>在 Chrome 地址栏打开 <code className="font-mono text-xs break-all">chrome://extensions</code>，开启「开发者模式」。</span>
+            </li>
+            <li className="flex gap-3 py-3">
+              <span className="font-mono text-xs leading-6 text-muted-foreground" aria-hidden="true">2</span>
+              <span>点击「加载已解压的扩展程序」，选择项目里的 <code className="font-mono text-xs">extension</code> 文件夹。</span>
+            </li>
+            <li className="flex gap-3 py-3">
+              <span className="font-mono text-xs leading-6 text-muted-foreground" aria-hidden="true">3</span>
+              <span>点击浏览器工具栏里的 Voce 图标，粘贴配对码完成连接。</span>
+            </li>
+          </ol>
+        </section>
+      </div>
+
+      <Dialog open={disconnectTarget !== null} onOpenChange={(open) => { if (!open && !revoking) setDisconnectTarget(null); }}>
+        <DialogContent onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const trigger = disconnectTrigger.current;
+          (trigger?.isConnected ? trigger : devicesHeading.current)?.focus();
+        }}>
+          <DialogTitle className="pr-9 wrap-anywhere">断开与 {disconnectTarget?.name} 的连接？</DialogTitle>
+          <DialogDescription>该设备需要重新配对才能继续保存生词。</DialogDescription>
+          <div className="mt-7 flex flex-wrap justify-end gap-3">
+            <DialogClose asChild><Button type="button" variant="ghost" disabled={revoking}>保持连接</Button></DialogClose>
+            <Button type="button" variant="danger" onClick={() => void handleRevoke()} disabled={revoking}>
+              {revoking ? "正在断开…" : "断开连接"}
             </Button>
           </div>
-
-          {devices && devices.length > 0 ? (
-            <div className="mt-8 border-t border-border pt-6">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">已连接设备</p>
-              <ul className="mt-3 divide-y divide-border">
-                {devices.map((device) => (
-                  <li key={device.id} className="flex items-center gap-3 py-4">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary" aria-hidden="true">
-                      <Laptop className="size-4 text-muted-foreground" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{device.name}</p>
-                      <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
-                        连接于 {new Date(device.connectedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => setDisconnectTarget(device)}
-                      aria-label={`断开与 ${device.name} 的连接`}
-                    >
-                      <Unplug className="size-4" aria-hidden="true" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          <Dialog open={disconnectTarget !== null} onOpenChange={(open) => { if (!open) setDisconnectTarget(null); }}>
-            <DialogContent>
-              <DialogTitle>断开与 {disconnectTarget?.name} 的连接？</DialogTitle>
-              <DialogDescription>
-                断开后该设备将无法继续同步生词。其他已连接设备不受影响。
-              </DialogDescription>
-              <div className="mt-7 flex justify-end gap-3">
-                <DialogClose asChild><Button type="button" variant="ghost" disabled={revoking}>保持连接</Button></DialogClose>
-                <Button type="button" variant="danger" onClick={() => void handleRevoke()} disabled={revoking}>
-                  {revoking ? "正在断开…" : "断开连接"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </aside>
-      </section>
-    </main>
+        </DialogContent>
+      </Dialog>
+    </SettingsPage>
   );
 }

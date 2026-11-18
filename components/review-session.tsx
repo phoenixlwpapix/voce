@@ -161,11 +161,10 @@ export function ReviewSession() {
     return (
       <main className="grid min-h-dvh place-items-center px-5 text-center">
         <div className="max-w-md">
-          <span className="mx-auto grid size-12 place-items-center rounded-full border border-border"><Check className="size-5" aria-hidden="true" /></span>
-          <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{languageNames[language]}复习完成</p>
-          <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">今日复习已全部完成</h1>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `已温故 ${reviewedCount} 个词汇，记忆曲线已更新。` : `当前没有需要复习的${languageNames[language]}词汇。`}</p>
-          <Button asChild className="mt-8"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回生词本</Link></Button>
+          <LanguageBadge language={language} />
+          <h1 className="mt-4 font-serif text-[clamp(2rem,1.45rem+2.75vw,3rem)] leading-tight tracking-[-0.045em]">{reviewedCount > 0 ? "今日复习完成" : "今天没有待复习的词"}</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">{reviewedCount > 0 ? `已复习 ${reviewedCount} 个词，复习进度已更新。` : `当前没有到期的${languageNames[language]}词汇。`}</p>
+          <Button asChild variant="outline" className="mt-6"><Link href="/"><ArrowLeft className="size-4" aria-hidden="true" />返回生词本</Link></Button>
         </div>
       </main>
     );
